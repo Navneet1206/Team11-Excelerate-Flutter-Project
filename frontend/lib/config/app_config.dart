@@ -20,5 +20,6 @@ class AppConfig {
     if (fromEnvFile != null && fromEnvFile.trim().isNotEmpty) return fromEnvFile;
 
     return kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+    // return kIsWeb ? 'https://team11-excelerate-flutter-project.vercel.app' : ' ';
   }
 }
