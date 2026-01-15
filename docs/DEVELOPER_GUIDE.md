@@ -1,224 +1,82 @@
 # SkillTrack Pro — Developer Guide
 
-This guide explains how the project is structured and where to change things.
+This guide documents the **current** repository state and the rules we will follow while building SkillTrack Pro.
 
-## Repository layout
+## Current Repository Layout (As of today)
 
-- `frontend/` — Flutter mobile app (UI + API consumer)
-- `backend/` — Node.js/Express REST API + PostgreSQL
-- `docs/` — Project documentation (user manual + developer guide)
+This repository currently contains a **single Flutter application scaffold**.
 
-Design rules (important):
+Key locations:
 
-- The app must remain lightweight.
-- No business logic/authorization decisions in Flutter; backend is authoritative.
-- Minimize API calls; paginate list views.
-- Do not store secrets in the app.
+- `lib/main.dart` — current app entrypoint (template app)
+- `test/widget_test.dart` — template widget test
+- `docs/` — documentation (this file + user manual)
+- `android/`, `ios/`, `web/`, `windows/`, `linux/`, `macos/` — platform targets
 
----
+Note: Any documentation that mentions `frontend/` or `backend/` folders is **not applicable** to the current repo structure.
 
-# Backend (Node.js + Express + PostgreSQL)
+## Project Rules (Must Follow)
 
-## Key folders
+Core principles:
 
-- `backend/src/app.js` — Express app wiring: routes, middleware, error handling
-- `backend/src/db/` — database connection / helpers
-- `backend/src/middleware/` — auth, RBAC, error handler
-- `backend/src/routes/` — route modules:
-  - `auth.js`
-  - `learner.js`
-  - `mentor.js`
-  - `admin.js`
-  - `notifications.js`
-- `backend/migrations/` — SQL migrations
-- `backend/seed/` — seed scripts / seed SQL
+- The app must remain lightweight and optimized.
+- The app is UI + API consumer only.
+- No business logic, authorization, or permission checks in Flutter.
+- Pagination must be enforced for list views.
+- Handle network failures gracefully.
+- Do not store secrets/credentials/private keys in the app.
 
-## How routing is wired
+## UI Design System (FINAL)
 
-`backend/src/app.js` mounts:
+The finalized design system is defined in the root README.
 
-- `GET /health`
-- `/auth`
-- `/learner`
-- `/mentor`
-- `/admin`
-- `/notifications`
+Single source of truth:
 
-If you add a new route module, register it in `backend/src/app.js`.
+- `README.md` → Colors, typography (Poppins), spacing/radius, popup rules.
 
-## Auth + RBAC
+Non-negotiable:
 
-- Authentication: JWT
-- Password hashing: bcrypt
-- RBAC: middleware checks user role for access
+- Always use a **custom branded popup** instead of platform/default alerts.
 
-Change access rules in:
+## Local Development
 
-- `backend/src/middleware/auth.js` (token parsing)
-- `backend/src/middleware/rbac.js` (role enforcement)
+From the repo root:
 
-Important: RBAC must remain on the backend.
-
-## Notifications
-
-- Data is stored in a `notifications` table (read/unread).
-- Unread badge count is supported through an endpoint in `backend/src/routes/notifications.js`.
-
-When you add new actions (e.g., new submission events), generate notifications in the backend so all clients stay consistent.
-
-## Migrations and seed
-
-Typical dev setup:
-
-1. Create database + user in PostgreSQL.
-2. Set `DATABASE_URL` in `backend/.env`.
-3. Run migrations.
-4. Seed demo data.
-
-See `backend/README.md` for exact commands (kept as the single source of truth).
-
-## Common backend edits
-
-- Add a new endpoint: create handler in the appropriate file under `backend/src/routes/`.
-- Add a new DB field: create a migration in `backend/migrations/`, then update route queries.
-- Add input validation: use Zod in the relevant route handler.
-
-Do not:
-
-- Put business logic in the client.
-- Return internal stack traces to clients.
-
----
-
-# Frontend (Flutter)
-
-## Key folders
-
-- `frontend/lib/app/` — app wiring (router, startup)
-- `frontend/lib/screens/` — UI screens grouped by role:
-  - `auth/`
-  - `learner/`
-  - `mentor/`
-  - `admin/`
-  - `shared/` (notifications, reusable screens)
-- `frontend/lib/services/` — API client, auth storage, network helpers
-- `frontend/lib/ui/` — reusable UI components (buttons, popups)
-
-## Routing (go_router)
-
-Main router is in:
-
-- `frontend/lib/app/router.dart`
-
-Patterns:
-
-- Role-based redirects prevent opening routes for other roles.
-- Keep new features behind navigation actions (lazy load by user intent).
-
-When adding a screen:
-
-1. Create the screen widget under the correct role folder.
-2. Add a route in `frontend/lib/app/router.dart`.
-3. Add a navigation entry point from an existing screen (button/menu).
-
-## Notifications UX
-
-- The bell icon badge uses `/notifications/unread-count`.
-- Notification list items open a popup detail view and then mark read.
-
-Popup helpers live in:
-
-- `frontend/lib/ui/app_popups.dart`
-
-Per project rules: prefer custom app popups over platform alerts.
-
-## API base URL configuration
-
-Where base URL is configured depends on the existing API client setup.
-
-- Search for `baseUrl`, `API_BASE_URL`, or `http://` inside `frontend/lib/services/`.
-
-Windows/device tips:
-
-- Android emulator uses `10.0.2.2` to reach host machine.
-- Physical device requires your machine LAN IP.
-
-## Network failure handling
-
-- Keep errors user-friendly.
-- Show retry where useful.
-- Avoid spamming multiple API calls.
-
----
-
-# Change Map (Where to modify what)
-
-## Add a new feature (example: “Learner Certificates”)
-
-Backend:
-
-- Add DB tables/migrations if needed.
-- Add endpoints under `backend/src/routes/learner.js` (or a new `certificates.js` route module).
-- Add RBAC rules.
-
-Frontend:
-
-- Add screen under `frontend/lib/screens/learner/`.
-- Add route in `frontend/lib/app/router.dart`.
-- Add API methods in `frontend/lib/services/`.
-
-## Change submission locking rules
-
-Backend:
-
-- `backend/src/routes/learner.js` controls whether resubmission is allowed.
-
-Frontend:
-
-- `frontend/lib/screens/learner/task_detail_screen.dart` controls the locked UI behavior.
-
-## Change mentor review behavior
-
-Backend:
-
-- `backend/src/routes/mentor.js` controls validation and persistence.
-
-Frontend:
-
-- `frontend/lib/screens/mentor/mentor_review_screen.dart` controls view/edit toggle UX.
-
----
-
-# Local Dev Workflow
-
-## Run backend
-
-- From `backend/`: install deps, create `.env`, run migrations/seed, start server.
-
-## Run frontend
-
-- From `frontend/`: `flutter pub get`, `flutter run`.
+- `flutter pub get`
+- `flutter run`
 
 Recommended:
 
-- Keep backend running on a stable port.
-- Avoid running multiple backend servers to prevent port conflicts.
+- Keep changes focused: UI only, no backend-style rule enforcement in the app.
 
----
+## Planned App Structure (To Be Added Later)
 
-# Troubleshooting
+When the actual SkillTrack Pro screens start getting built, we will introduce a clean structure under `lib/`.
 
-## 401/403 issues
+Planned (not present yet):
 
-- Confirm token is present in secure storage.
-- Confirm backend role checks allow the action.
+- `lib/app/` — app wiring (routing/startup)
+- `lib/screens/` — screens (Login, Home, Program Listing, Program Details)
+- `lib/ui/` — reusable UI components (buttons, inputs, popups)
+- `lib/services/` — API client + network helpers
 
-## Postgres type errors
+Important: This is only a plan. Do not create unnecessary modules until the team starts implementing screens.
 
-- Ensure UUID/text casting is correct in SQL queries.
-- Prefer explicit casts when building JSONB meta fields.
+## Change Map (Current)
 
-## Datetime validation errors
+Right now, the only real code path is:
 
-- Prefer `z.coerce.date()` when accepting date inputs from clients.
-- Store ISO strings consistently.
+- `lib/main.dart` → the current UI
+
+If you need to add something today, add it minimally and keep it consistent with README design system.
+
+## Troubleshooting
+
+### App won’t run
+
+- Run `flutter doctor` and fix any missing SDK/tooling.
+- Run `flutter clean` then `flutter pub get`.
+
+### Lints / analysis issues
+
+- Lints come from `analysis_options.yaml` which includes `flutter_lints`.

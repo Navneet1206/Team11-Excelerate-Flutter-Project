@@ -2,6 +2,12 @@
 
 This manual explains how to use the SkillTrack Pro mobile application.
 
+## Current Status (Important)
+
+At the moment, this repository contains a **Flutter starter scaffold** (template app). The full SkillTrack Pro screens (Login, Home, Program Listing, Program Details) will be built later.
+
+So, the sections below that describe SkillTrack Pro flows are the **planned behavior/spec** and will become active once screens are implemented.
+
 ## What SkillTrack Pro does
 
 SkillTrack Pro helps teams manage internship / learning programs:
@@ -210,3 +216,16 @@ Audit logs help track important actions (who did what and when).
 
 - Check that the backend server is running.
 - Ensure the app is using the correct API base URL for your device type.
+
+---
+
+# Running the App (Current Repo)
+
+From the repo root:
+
+1. Run `flutter pub get`
+2. Run `flutter run`
+
+What you will currently see:
+
+- A basic Flutter template screen (starter UI). This will be replaced by SkillTrack Pro screens later.
