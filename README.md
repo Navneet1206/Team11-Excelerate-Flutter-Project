@@ -125,7 +125,47 @@ Prereq: Flutter SDK installed.
 Commands:
 
 - `flutter pub get`
-- `flutter run`
+- `flutter run -d chrome`
+
+Notes:
+
+- If `flutter run -d windows` fails with a Visual Studio toolchain error, use Chrome/Web for the prototype.
+
+## Current Prototype Structure (for team contribution)
+
+Entry:
+
+- `lib/main.dart` → starts the app
+
+App wiring:
+
+- `lib/app/app.dart` → MaterialApp + routes
+- `lib/app/routes.dart` → route constants
+
+Screens (Week 2):
+
+- `lib/screens/login/login_screen.dart`
+- `lib/screens/home/home_screen.dart`
+- `lib/screens/programs/program_list_screen.dart`
+- `lib/screens/programs/program_detail_screen.dart`
+
+Design system tokens:
+
+- `lib/theme/app_colors.dart`
+- `lib/theme/app_theme.dart`
+
+Reusable UI:
+
+- `lib/ui/app_buttons.dart`
+- `lib/ui/app_card.dart`
+- `lib/ui/app_popup.dart`
+
+## Contributing
+
+Team workflow and PR checklist:
+
+- See `CONTRIBUTING.md`
+- PR template is in `.github/pull_request_template.md`
 
 ## Next Implementation Checklist (For Later)
 
@@ -137,6 +177,24 @@ This section is a checklist of what will be added when development starts (no co
 - Implement screens: Login → Home → Program Listing → Program Details
 - Add API client layer (base URL config + error handling)
 - Add pagination for program listing
+
+## Screenshots (Add before final submission)
+
+Add screenshots in this exact order (as required):
+
+1. Login Screen
+2. Home Screen
+3. Program Listing
+4. Program Details
+
+Save images under `docs/screenshots/` and link them here:
+
+| Screen | Screenshot |
+| --- | --- |
+| Login | `docs/screenshots/01-login.png` |
+| Home | `docs/screenshots/02-home.png` |
+| Program Listing | `docs/screenshots/03-program-list.png` |
+| Program Details | `docs/screenshots/04-program-details.png` |
 
 ## Docs
 
