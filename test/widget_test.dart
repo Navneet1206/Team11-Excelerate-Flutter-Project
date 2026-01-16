@@ -5,26 +5,31 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:t/main.dart';
+import 'package:t/app/app.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Prototype navigation smoke test', (WidgetTester tester) async {
+    await tester.pumpWidget(const SkillTrackApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Login screen
+    expect(find.text('Login Screen (placeholder)'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Navigate to Home
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('Home'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Navigate to Programs
+    await tester.tap(find.text('Browse Programs'));
+    await tester.pumpAndSettle();
+    expect(find.text('Programs'), findsOneWidget);
+
+    // Open details placeholder
+    await tester.tap(find.text('Open Program Details (placeholder)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Program Details'), findsOneWidget);
+    expect(find.text('Enroll'), findsOneWidget);
   });
 }
