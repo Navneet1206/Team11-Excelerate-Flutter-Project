@@ -13,5 +13,7 @@ class AppColors {
   static const border = Color(0xFFE5E7EB); // Light Grey
 
   static const success = Color(0xFF22C55E); // Emerald Green
-  static const error = Color(0xFFEF4444); // Soft Red
+  static const error = Color(0xFFEF4444);
+
+  static Color? get card => null; // Soft Red
 }
