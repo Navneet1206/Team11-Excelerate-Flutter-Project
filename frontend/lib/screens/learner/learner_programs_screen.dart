@@ -150,44 +150,105 @@ class _LearnerProgramsScreenState extends State<LearnerProgramsScreen> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: scheme.surfaceContainerHigh,
+        appBar: AppBar(
+          backgroundColor: scheme.surface,
+          title: Text(
+            'Explore Programs',
+            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          bottom: TabBar(
+            onTap: (index) {
+              if (index == 1 && _available.isEmpty && !_loadingAvailable) {
+                _loadAvailable(reset: true);
+              }
+            },
+            dividerColor: Colors.transparent,
+            indicatorSize: TabBarIndicatorSize.label,
+            indicatorWeight: 4,
+            indicatorColor: scheme.primary,
+            labelColor: scheme.primary,
+            unselectedLabelColor: scheme.onSurfaceVariant,
+            labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            tabs: const [
+              Tab(text: 'My Journey'),
+              Tab(text: 'Catalog'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildEnrolledTab(),
+            _buildAvailableTab(),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEnrolledTab() {
     if (_loadingEnrolled) return const Center(child: CircularProgressIndicator());
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     if (_enrolled.isEmpty) {
-      return ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          SizedBox(height: 40),
-          Center(child: Text('No enrolled programs yet.')),
-          SizedBox(height: 8),
-          Center(child: Text('Switch to Available to enroll.')),
-        ],
+      return Container(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.auto_stories_outlined, size: 80, color: scheme.primary.withValues(alpha: 0.2)),
+            const SizedBox(height: 24),
+            Text(
+              'No active programs',
+              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Explore the catalog to start your learning journey.',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: () => DefaultTabController.of(context).animateTo(1),
+              icon: const Icon(Icons.explore_outlined),
+              label: const Text('Browse Catalog'),
+            ),
+          ],
+        ),
       );
     }
 
     return RefreshIndicator(
       onRefresh: () => _loadEnrolled(reset: true),
       child: ListView.separated(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(20),
         itemCount: _enrolled.length + (_hasMoreEnrolled ? 1 : 0),
-        separatorBuilder: (context, index) => const SizedBox(height: 10),
+        separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (ctx, i) {
           if (i == _enrolled.length) {
-            if (!_loadingMoreEnrolled) {
-              _loadEnrolled(reset: false);
-            }
+            if (!_loadingMoreEnrolled) _loadEnrolled(reset: false);
             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: 20),
               child: Center(child: CircularProgressIndicator()),
             );
           }
 
           final p = _enrolled[i];
-          return ListTile(
-            tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            title: Text(p['title']?.toString() ?? ''),
-            subtitle: Text(p['description']?.toString() ?? ''),
-            trailing: const Icon(Icons.chevron_right),
+          return _ProgramCard(
+            title: p['title']?.toString() ?? '',
+            description: p['description']?.toString() ?? '',
+            isEnrolled: true,
             onTap: () => widget.openProgram(p['id'] as String),
           );
         },
@@ -197,15 +258,35 @@ class _LearnerProgramsScreenState extends State<LearnerProgramsScreen> {
 
   Widget _buildAvailableTab() {
     if (_loadingAvailable) return const Center(child: CircularProgressIndicator());
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     if (_available.isEmpty) {
       return RefreshIndicator(
         onRefresh: () => _loadAvailable(reset: true),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: const [
-            SizedBox(height: 40),
-            Center(child: Text('No available programs right now.')),
-          ],
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            padding: const EdgeInsets.all(40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off_rounded, size: 80, color: scheme.primary.withValues(alpha: 0.2)),
+                const SizedBox(height: 24),
+                Text(
+                  'All caught up!',
+                  style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'No new available programs right now. Check back later!',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -213,16 +294,14 @@ class _LearnerProgramsScreenState extends State<LearnerProgramsScreen> {
     return RefreshIndicator(
       onRefresh: () => _loadAvailable(reset: true),
       child: ListView.separated(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(20),
         itemCount: _available.length + (_hasMoreAvailable ? 1 : 0),
-        separatorBuilder: (context, index) => const SizedBox(height: 10),
+        separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (ctx, i) {
           if (i == _available.length) {
-            if (!_loadingMoreAvailable) {
-              _loadAvailable(reset: false);
-            }
+            if (!_loadingMoreAvailable) _loadAvailable(reset: false);
             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: 20),
               child: Center(child: CircularProgressIndicator()),
             );
           }
@@ -232,67 +311,136 @@ class _LearnerProgramsScreenState extends State<LearnerProgramsScreen> {
           final enrolling = _enrolling.contains(programId);
           final mentorName = (p['mentor_name'] ?? p['mentorName'])?.toString();
 
-          return ListTile(
-            tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            title: Text(p['title']?.toString() ?? ''),
-            subtitle: Text(
-              [
-                if ((p['description']?.toString() ?? '').isNotEmpty) p['description']?.toString() ?? '',
-                if (mentorName != null && mentorName.isNotEmpty) 'Mentor: $mentorName',
-              ].where((e) => e.isNotEmpty).join('\n'),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            isThreeLine: true,
+          return _ProgramCard(
+            title: p['title']?.toString() ?? '',
+            description: p['description']?.toString() ?? '',
+            mentorName: mentorName,
+            isEnrolled: false,
+            enrolling: enrolling,
+            onEnroll: () => _enroll(programId),
             onTap: () async {
               await showAppInfoPopup(
                 context,
-                title: 'Enroll to view',
-                message: 'Enroll in this program to view tasks and milestones.',
+                title: 'Program Preview',
+                message: 'Enroll to access course materials, tasks, and connect with your mentor.',
+                primaryButtonText: 'Got it',
               );
             },
-            trailing: FilledButton(
-              onPressed: enrolling ? null : () => _enroll(programId),
-              child: enrolling
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Enroll'),
-            ),
           );
         },
       ),
     );
   }
+}
+
+class _ProgramCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final String? mentorName;
+  final bool isEnrolled;
+  final bool enrolling;
+  final VoidCallback onTap;
+  final VoidCallback? onEnroll;
+
+  const _ProgramCard({
+    required this.title,
+    required this.description,
+    this.mentorName,
+    required this.isEnrolled,
+    this.enrolling = false,
+    required this.onTap,
+    this.onEnroll,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Programs'),
-          bottom: TabBar(
-            onTap: (index) {
-              // Lazy-load Available tab to minimize API calls.
-              if (index == 1 && _available.isEmpty && !_loadingAvailable) {
-                _loadAvailable(reset: true);
-              }
-            },
-            tabs: const [
-              Tab(text: 'My Programs'),
-              Tab(text: 'Available'),
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: (isEnrolled ? scheme.secondary : scheme.primary).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      isEnrolled ? Icons.assignment_turned_in_rounded : Icons.library_add_rounded,
+                      color: isEnrolled ? scheme.secondary : scheme.primary,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900, color: scheme.onSurface),
+                        ),
+                        if (mentorName != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.person_pin_rounded, size: 14, color: scheme.onSurfaceVariant),
+                              const SizedBox(width: 4),
+                              Text(
+                                mentorName!,
+                                style: textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                description,
+                style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.5),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (!isEnrolled && onEnroll != null) ...[
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: enrolling ? null : onEnroll,
+                    child: enrolling
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                        : const Text('Start Learning'),
+                  ),
+                ),
+              ],
             ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildEnrolledTab(),
-            _buildAvailableTab(),
-          ],
         ),
       ),
     );

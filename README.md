@@ -1,202 +1,98 @@
-# SkillTrack Pro (Flutter)
+# SkillTrack Pro — Digital Scholastic Learning Platform
 
-Mobile app UI for SkillTrack Pro.
+SkillTrack Pro is a premium, high-performance internship and curriculum management system. Built with a focus on **Visual Excellence** and **Technical Authority**, it provides a seamless bridge between learners, mentors, and administrators.
 
-Important: This repo currently contains the Flutter scaffold and documentation. The full app screens/modules will be added later, but the **design system and UI rules below are FINAL** and must be followed by everyone so the app looks consistent.
+The application has undergone a comprehensive UI/UX overhaul, adopting the **"Digital Scholastic"** design system—a modern Indigo/Slate aesthetic characterized by structural clarity, vibrant accents, and smooth interactive patterns.
 
-## Design System (FINAL)
+---
 
-### 1) Color System
+## 🎨 Design Philosophy: Digital Scholastic
+- **Premium Aesthetics**: Vibrant indigo accents paired with clean slate surfaces.
+- **Structural Clarity**: Heavy use of custom cards with 24-32px rounded corners and subtle shadows.
+- **Modern Typography**: High-contrast pairings using **Outfit** for headers and **Inter** for readability.
+- **Dynamic Feedback**: Micro-animations, skeleton loaders, and custom glassmorphism alerts.
 
-| Purpose | Color Name | Hex |
-| --- | --- | --- |
-| Primary Brand | Deep Indigo | `#2D2F92` |
-| Accent / CTA | Sky Blue | `#4F9DFF` |
-| Background | Soft White | `#F7F9FC` |
-| Card / Surface | Pure White | `#FFFFFF` |
-| Title Text | Charcoal Black | `#1F2933` |
-| Body Text | Cool Grey | `#6B7280` |
-| Border / Divider | Light Grey | `#E5E7EB` |
-| Success | Emerald Green | `#22C55E` |
-| Error | Soft Red | `#EF4444` |
+## 🚀 Core Features
 
-Rules:
-- Use Background = Soft White for screens.
-- Use Card/Surface = Pure White for cards, sheets, inputs.
-- Use Accent/CTA = Sky Blue for primary actions.
+### For Learners
+- **Learning Journey**: A specialized curriculum trail with status-coded progress tracking.
+- **Deliverable Center**: Modern submission hub for tasks, resource links, and mentor feedback.
+- **Sentiment Loop**: Post-course review system with star-rating visualizations.
+- **Performance Reports**: Data-driven dashboards illustrating approved vs. rejected progress.
 
-### 2) Typography (Font System)
+### For Mentors
+- **Cohort Management**: High-level overview of all assigned learners and their activity timelines.
+- **Precision Review**: Dedicated grading hub for evaluating submissions and providing qualitative feedback.
+- **Knowledge Trail**: Vertical timeline views to visualize learner growth over time.
 
-Font family everywhere: **Poppins** (Android + iOS)
+### For Admins
+- **Management Hub**: Centralized console for managing users, programs, and system audit trails.
+- **Curriculum Architecture**: Advanced tools to initialize programs, draft challenges, and provision milestones.
+- **Governance Logs**: Institutional-grade activity tracking to monitor administrative actions.
 
-| Use Case | Size | Weight |
-| --- | --- | --- |
-| App Title | 24px | Bold |
-| Screen Heading | 20px | SemiBold |
-| Card Title | 16px | Medium |
-| Body Text | 14px | Regular |
-| Button Text | 15px | Medium |
+---
 
-### 3) Spacing & Shape Rules
+## 🛠️ Repository Structure
 
-- Screen padding: `16` on all sides
-- Vertical gaps between sections: `12–16`
-- Cards: border radius `16`
-- Buttons: height `48` (full width for primary CTA where possible)
-- Shadows: soft only (no dark/heavy shadows)
+- `backend/` — REST API (Node.js/Express + PostgreSQL)
+- `frontend/` — Premium Flutter Application (iOS, Android, Web)
 
-### 4) Popups (Project Rule)
+## 📖 Documentation
 
-- **Never use** `showDialog` with a plain `AlertDialog` as the final UI.
-- Always implement a **custom, branded app popup** (consistent colors, radius=16, typography above).
+- **User Experience**: [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
+- **Technical Architecture**: [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 
-## Screens (UI Behavior Spec)
+---
 
-These 4 screens will be built later. Everyone must follow the same UI rules.
+## ⚡ Quickstart
 
-### Login Screen
+### 1) Backend (Single Source of Truth)
+```bash
+cd backend
+cp .env.example .env
+npm install
+npm run migrate
+npm run seed
+npm run dev
+```
+*API runs on `http://localhost:3000`*
 
-- Background: `#F7F9FC`
-- Top: logo/title centered
-- Input fields: white card style
-- Login button: Sky Blue `#4F9DFF`, full width
-- Text field border: Light Grey `#E5E7EB`
+### 2) Frontend (Visual UI)
+```bash
+cd frontend
+flutter pub get
 
-### Home Screen
+# Run on Emulator/Device
+flutter run
 
-- Header bar: white background
-- Greeting text: Charcoal Black `#1F2933`
-- Main CTA button: Sky Blue `#4F9DFF`
-- Cards: white surface with soft shadow
+# Run on Web (Chrome)
+flutter run -d chrome
+```
 
-### Program Listing Screen
+---
 
-- Layout: vertical list of cards
-- Each card:
-	- Background: `#FFFFFF`
-	- Radius: `16`
-	- Title: `#1F2933`
-	- Subtitle: `#6B7280`
-	- Arrow icon: `#4F9DFF`
+## 📦 Deployment & Build
 
-### Program Details Screen
+To point the application at your production backend during the build process, use the `--dart-define` flag.
 
-- Top section: program image/title
-- Buttons:
-	- Enroll: Sky Blue fill
-	- Back: border-only (no fill)
+### Web Build
+```bash
+flutter build web --dart-define=API_BASE_URL=https://your-api.vercel.app
+```
 
-## Team Work Distribution
+### Android Build (APK)
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://your-api.vercel.app
+```
 
-| Member | Screen Responsibility |
-| --- | --- |
-| Member 1 | Login Screen |
-| Member 2 | Home Screen |
-| Member 3 | Program Listing |
-| Member 4 | Program Details |
+---
 
-Non-negotiable: Same colors, fonts, spacing across all screens.
+## 📐 System Golden Rules
+1. **The Backend is Authoritative**: All logic, RBAC, and validation live on the server.
+2. **The Client is Temporary**: The app acts strictly as a high-performance UI consumer.
+3. **The Database is Sacred**: Optimized indexing and atomic transactions ensure data integrity.
+4. **Performance is a Feature**: Lightweight bundles, lazy-loaded components, and tree-shaking are mandatory.
 
-## Screenshots Rule (README)
+---
 
-When adding screenshots later, keep this exact order:
-
-1. Login Screen
-2. Home Screen
-3. Program Listing
-4. Program Details
-
-## App Architecture Rules (Must Follow)
-
-To keep the app lightweight and correct:
-
-- The mobile app is **UI + API consumer only** (no business logic / authorization decisions in Flutter).
-- Backend is the single source of truth (all permission checks on backend).
-- Features must load **lazily** (on-demand) and not on app startup.
-- Minimize API calls; never call multiple APIs unnecessarily.
-- Pagination is mandatory for any list view.
-- Handle network failures gracefully (user-friendly errors + retry when useful).
-- Do not store secrets/credentials/private keys in the app.
-
-## Local Dev
-
-Prereq: Flutter SDK installed.
-
-Commands:
-
-- `flutter pub get`
-- `flutter run -d chrome`
-
-Notes:
-
-- If `flutter run -d windows` fails with a Visual Studio toolchain error, use Chrome/Web for the prototype.
-
-## Current Prototype Structure (for team contribution)
-
-Entry:
-
-- `lib/main.dart` → starts the app
-
-App wiring:
-
-- `lib/app/app.dart` → MaterialApp + routes
-- `lib/app/routes.dart` → route constants
-
-Screens (Week 2):
-
-- `lib/screens/login/login_screen.dart`
-- `lib/screens/home/home_screen.dart`
-- `lib/screens/programs/program_list_screen.dart`
-- `lib/screens/programs/program_detail_screen.dart`
-
-Design system tokens:
-
-- `lib/theme/app_colors.dart`
-- `lib/theme/app_theme.dart`
-
-Reusable UI:
-
-- `lib/ui/app_buttons.dart`
-- `lib/ui/app_card.dart`
-- `lib/ui/app_popup.dart`
-
-## Contributing
-
-Team workflow and PR checklist:
-
-- See `CONTRIBUTING.md`
-- PR template is in `.github/pull_request_template.md`
-
-## Next Implementation Checklist (For Later)
-
-This section is a checklist of what will be added when development starts (no code generated yet):
-
-- Add Poppins font setup
-- Create theme tokens (colors/typography/radius/spacing)
-- Build custom popup component (replaces default alerts)
-- Implement screens: Login → Home → Program Listing → Program Details
-- Add API client layer (base URL config + error handling)
-- Add pagination for program listing
-
-## Screenshots (Add before final submission)
-
-Add screenshots in this exact order (as required):
-
-1. Login Screen
-2. Home Screen
-3. Program Listing
-4. Program Details
-
-Save images under `docs/screenshots/` and link them here:
-
-| Screen | Screenshot |
-| --- | --- |
-| Login | `docs/screenshots/01-login.png` |
-| Home | `docs/screenshots/02-home.png` |
-| Program Listing | `docs/screenshots/03-program-list.png` |
-| Program Details | `docs/screenshots/04-program-details.png` |
-
-## Docs
-
-- Developer guide: `docs/DEVELOPER_GUIDE.md`
-- User manual: `docs/USER_MANUAL.md`
+Developed with ❤️ by Team Excelerate.

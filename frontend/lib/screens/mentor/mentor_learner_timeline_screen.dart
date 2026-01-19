@@ -40,54 +40,152 @@ class _MentorLearnerTimelineScreenState extends State<MentorLearnerTimelineScree
   @override
   Widget build(BuildContext context) {
     final items = _items;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Learner timeline')),
+      backgroundColor: scheme.surfaceContainerHigh,
+      appBar: AppBar(
+        title: Text(
+          'Learning Trail',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: items.isEmpty
-                  ? ListView(
+                  ? _EmptyTimeline()
+                  : ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Card(
-                          elevation: 0,
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('No timeline yet', style: Theme.of(context).textTheme.titleMedium),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'This timeline is generated from the learner\'s submissions and your reviews.\n\n'
-                                  'To see items here: Admin assigns learner to a program → Admin creates tasks → Learner submits → Mentor reviews.',
-                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                       itemCount: items.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 10),
                       itemBuilder: (ctx, i) {
                         final t = items[i];
-                        return ListTile(
-                          tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          title: Text(t['task_title']?.toString() ?? ''),
-                          subtitle: Text('Status: ${t['status'] ?? ''}\nScore: ${t['score'] ?? '-'}'),
+                        final status = t['status']?.toString() ?? '';
+                        final score = t['score']?.toString();
+                        final isLast = i == items.length - 1;
+
+                        final statusColor = switch (status) {
+                          'approved' => Colors.green,
+                          'submitted' => scheme.primary,
+                          'rejected' => Colors.redAccent,
+                          _ => scheme.outline,
+                        };
+
+                        return IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Timeline Indicator
+                              Column(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: statusColor,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: statusColor.withValues(alpha: 0.2), width: 4),
+                                    ),
+                                  ),
+                                  if (!isLast)
+                                    Expanded(
+                                      child: Container(
+                                        width: 2,
+                                        color: scheme.outlineVariant,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(width: 16),
+                              // Content Card
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 24),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: scheme.surface,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: scheme.outlineVariant),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                t['task_title']?.toString() ?? 'Untitled Milestone',
+                                                style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                                              ),
+                                            ),
+                                            if (score != null)
+                                              Text(
+                                                'Score: $score',
+                                                style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: scheme.primary),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            status.toUpperCase(),
+                                            style: TextStyle(
+                                              color: statusColor,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),
             ),
+    );
+  }
+}
+
+class _EmptyTimeline extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.timeline_rounded, size: 64, color: scheme.outline),
+          const SizedBox(height: 16),
+          Text(
+            'No activities yet',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'The learning trail starts building once tasks are submitted and reviewed.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -48,119 +48,143 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: scheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(Icons.school_outlined, color: scheme.onPrimaryContainer),
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Premium Header
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('SkillTrack Pro', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-                            const SizedBox(height: 2),
-                            Text('Internship & Learning Platform', style: Theme.of(context).textTheme.bodyMedium),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Card(
-                    elevation: 0,
-                    color: Theme.of(context).colorScheme.surface,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: _email,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.username, AutofillHints.email],
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: Icon(Icons.mail_outline),
-                              ),
-                              validator: (v) {
-                                final value = (v ?? '').trim();
-                                if (value.isEmpty) return 'Email is required';
-                                if (!value.contains('@')) return 'Enter a valid email';
-                                return null;
-                              },
+                      child: Column(
+                        children: [
+                          Icon(Icons.school_rounded, size: 48, color: scheme.primary),
+                          const SizedBox(height: 16),
+                          Text(
+                            'SkillTrack Pro',
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: scheme.onSurface,
+                              letterSpacing: -1,
                             ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _password,
-                              obscureText: _obscure,
-                              autofillHints: const [AutofillHints.password],
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                prefixIcon: const Icon(Icons.lock_outline),
-                                suffixIcon: IconButton(
-                                  onPressed: () => setState(() => _obscure = !_obscure),
-                                  icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
-                                ),
-                              ),
-                              validator: (v) {
-                                final value = v ?? '';
-                                if (value.isEmpty) return 'Password is required';
-                                if (value.length < 6) return 'Minimum 6 characters';
-                                return null;
-                              },
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Excellence in Internship Tracking',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
                             ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton(
-                                onPressed: _loading ? null : _submit,
-                                child: _loading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Text('Sign in'),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Use the seeded users from backend (admin/mentor/learner), or create a learner account.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton.icon(
-                                onPressed: _loading ? null : () => context.push('/signup'),
-                                icon: const Icon(Icons.person_add_alt_1_outlined),
-                                label: const Text('Learner Signup'),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 40),
+                    Text(
+                      'Welcome Back',
+                      style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Enter your credentials to continue',
+                      style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 24),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.username, AutofillHints.email],
+                            decoration: const InputDecoration(
+                              labelText: 'Email Address',
+                              prefixIcon: Icon(Icons.email_outlined),
+                            ),
+                            validator: (v) {
+                              final value = (v ?? '').trim();
+                              if (value.isEmpty) return 'Email is required';
+                              if (!value.contains('@')) return 'Enter a valid email';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _password,
+                            obscureText: _obscure,
+                            autofillHints: const [AutofillHints.password],
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: const Icon(Icons.lock_outline_rounded),
+                              suffixIcon: IconButton(
+                                onPressed: () => setState(() => _obscure = !_obscure),
+                                icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                              ),
+                            ),
+                            validator: (v) {
+                              final value = v ?? '';
+                              if (value.isEmpty) return 'Password is required';
+                              if (value.length < 6) return 'Minimum 6 characters';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton(
+                            onPressed: _loading ? null : _submit,
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                                  )
+                                : const Text('Sign In'),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              const Expanded(child: Divider()),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('New here?', style: textTheme.bodySmall),
+                              ),
+                              const Expanded(child: Divider()),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton(
+                            onPressed: _loading ? null : () => context.push('/signup'),
+                            child: const Text('Create Learner Account'),
+                          ),
+                          const SizedBox(height: 32),
+                          Center(
+                            child: Text(
+                              'Authorized Access Only',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

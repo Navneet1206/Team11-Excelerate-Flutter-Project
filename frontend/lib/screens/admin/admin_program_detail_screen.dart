@@ -104,18 +104,25 @@ class _AdminProgramDetailScreenState extends State<AdminProgramDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
+      backgroundColor: scheme.surfaceContainerHigh,
       appBar: AppBar(
-        title: const Text('Program detail'),
+        title: Text(
+          'Curriculum Insight',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
         actions: [
-          IconButton(
-            tooltip: 'Reviews',
-            onPressed: () => context.push('/admin/programs/${widget.programId}/reviews'),
-            icon: const Icon(Icons.star_outline),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton.filledTonal(
+              tooltip: 'Cohort Analytics',
+              onPressed: () => context.push('/admin/programs/${widget.programId}/reviews'),
+              icon: const Icon(Icons.analytics_rounded, size: 20),
+            ),
           ),
-          IconButton(onPressed: _assignLearner, icon: const Icon(Icons.person_add_alt_1)),
-          IconButton(onPressed: _createMilestone, icon: const Icon(Icons.flag_outlined)),
-          IconButton(onPressed: _createTask, icon: const Icon(Icons.playlist_add)),
         ],
       ),
       body: _loading
@@ -123,95 +130,240 @@ class _AdminProgramDetailScreenState extends State<AdminProgramDetailScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 children: [
-                  Text(_program?['title']?.toString() ?? '', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 6),
-                  Card(
-                    elevation: 0,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text('Actions', style: Theme.of(context).textTheme.titleMedium),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              FilledButton.icon(
-                                onPressed: _assignLearner,
-                                icon: const Icon(Icons.person_add_alt_1),
-                                label: const Text('Assign learner'),
+                  // Program Header Detail
+                  Text(
+                    _program?['title']?.toString().toUpperCase() ?? 'PROGRAM DETAIL',
+                    style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900, color: scheme.primary, letterSpacing: 1.1),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: scheme.outlineVariant),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                              child: Icon(Icons.school_rounded, color: scheme.primary, size: 20),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                _program?['title']?.toString() ?? 'Learning Track',
+                                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
                               ),
-                              FilledButton.tonalIcon(
-                                onPressed: _changeMentor,
-                                icon: const Icon(Icons.support_agent_outlined),
-                                label: const Text('Change mentor'),
-                              ),
-                              FilledButton.tonalIcon(
-                                onPressed: _createMilestone,
-                                icon: const Icon(Icons.flag_outlined),
-                                label: const Text('Create milestone'),
-                              ),
-                              FilledButton.tonalIcon(
-                                onPressed: _createTask,
-                                icon: const Icon(Icons.playlist_add),
-                                label: const Text('Create task'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Task assignment model: tasks belong to a program. Any learner assigned to the program automatically sees all tasks and can submit them.',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'MANAGEMENT HUB',
+                          style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: scheme.outline, letterSpacing: 0.5),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _ActionChip(
+                              label: 'Add Learner',
+                              icon: Icons.person_add_rounded,
+                              onTap: _assignLearner,
+                              color: scheme.primary,
+                            ),
+                            _ActionChip(
+                              label: 'New Milestone',
+                              icon: Icons.flag_rounded,
+                              onTap: _createMilestone,
+                              color: scheme.secondary,
+                            ),
+                            _ActionChip(
+                              label: 'Add Task',
+                              icon: Icons.playlist_add_rounded,
+                              onTap: _createTask,
+                              color: scheme.tertiary,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
+
+                  const SizedBox(height: 32),
+                  _SectionHeader(title: 'Program Mentor', icon: Icons.admin_panel_settings_rounded),
                   const SizedBox(height: 12),
-                  Card(
-                    elevation: 0,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: scheme.outlineVariant),
+                    ),
                     child: ListTile(
-                      title: const Text('Mentor'),
-                      subtitle: Text(_program?['mentor_name']?.toString() ?? ''),
-                      trailing: const Icon(Icons.edit_outlined),
-                      onTap: _changeMentor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Learners', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 10),
-                  ..._learners.map(
-                    (l) => Card(
-                      elevation: 0,
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: ListTile(
-                        title: Text(l['full_name']?.toString() ?? ''),
-                        subtitle: Text(l['email']?.toString() ?? ''),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      leading: CircleAvatar(
+                        backgroundColor: scheme.secondary.withValues(alpha: 0.1),
+                        child: Icon(Icons.person_pin_rounded, color: scheme.secondary),
+                      ),
+                      title: Text(
+                        _program?['mentor_name']?.toString() ?? 'Unassigned',
+                        style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: const Text('Primary Instructor'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        onPressed: _changeMentor,
+                        tooltip: 'Change Mentor',
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text('Milestones', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 10),
-                  ..._milestones.map(
-                    (m) => Card(
-                      elevation: 0,
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: ListTile(
-                        title: Text(m['title']?.toString() ?? ''),
-                        subtitle: Text('Order: ${m['sort_order'] ?? 0}'),
-                      ),
-                    ),
-                  ),
+
+                  const SizedBox(height: 32),
+                  _SectionHeader(title: 'Assigned Learners', icon: Icons.groups_rounded, count: _learners.length),
+                  const SizedBox(height: 12),
+                  if (_learners.isEmpty)
+                    _EmptyHint(text: 'No learners enrolled in this program yet.', icon: Icons.person_off_rounded)
+                  else
+                    ..._learners.map((l) => Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: scheme.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: scheme.outlineVariant),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: scheme.primary.withValues(alpha: 0.1),
+                              child: Text(
+                                (l['full_name']?.toString() ?? '?')[0].toUpperCase(),
+                                style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            title: Text(l['full_name']?.toString() ?? 'Learner', style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                            subtitle: Text(l['email']?.toString() ?? '', style: textTheme.bodySmall),
+                          ),
+                        )),
+
+                  const SizedBox(height: 32),
+                  _SectionHeader(title: 'Curriculum Trail', icon: Icons.map_rounded, count: _milestones.length),
+                  const SizedBox(height: 12),
+                  if (_milestones.isEmpty)
+                    _EmptyHint(text: 'Define your program milestones to structure the curriculum.', icon: Icons.timeline_rounded)
+                  else
+                    ..._milestones.map((m) => Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: scheme.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: scheme.outlineVariant),
+                          ),
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: scheme.secondary.withValues(alpha: 0.1), shape: BoxShape.circle),
+                              child: Text('${m['sort_order'] ?? 0}', style: TextStyle(color: scheme.secondary, fontWeight: FontWeight.w900, fontSize: 12)),
+                            ),
+                            title: Text(m['title']?.toString() ?? 'Milestone', style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                            subtitle: const Text('Program Core Phase'),
+                            trailing: Icon(Icons.chevron_right_rounded, color: scheme.outline),
+                          ),
+                        )),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+  const _ActionChip({required this.label, required this.icon, required this.onTap, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final int? count;
+  const _SectionHeader({required this.title, required this.icon, this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: scheme.outline),
+        const SizedBox(width: 12),
+        Text(
+          title.toUpperCase(),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w900, color: scheme.outline, letterSpacing: 0.5),
+        ),
+        if (count != null) ...[
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(color: scheme.outline.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+            child: Text('$count', style: TextStyle(color: scheme.outline, fontWeight: FontWeight.bold, fontSize: 10)),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _EmptyHint extends StatelessWidget {
+  final String text;
+  final IconData icon;
+  const _EmptyHint({required this.text, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.outlineVariant)),
+      child: Column(
+        children: [
+          Icon(icon, color: scheme.outline, size: 32),
+          const SizedBox(height: 12),
+          Text(text, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
+        ],
+      ),
     );
   }
 }
@@ -229,7 +381,6 @@ class _AssignLearnerDialog extends StatefulWidget {
 class _AssignLearnerDialogState extends State<_AssignLearnerDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _saving = false;
-
   bool _loadingLearners = true;
   List<Map<String, dynamic>> _learners = const [];
   String? _learnerId;
@@ -240,19 +391,10 @@ class _AssignLearnerDialogState extends State<_AssignLearnerDialog> {
     _loadLearners();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   Future<void> _loadLearners() async {
     setState(() => _loadingLearners = true);
     try {
-      final json = await widget.api.get('/admin/users', query: {
-        'role': 'learner',
-        'limit': '50',
-        'offset': '0',
-      });
+      final json = await widget.api.get('/admin/users', query: {'role': 'learner', 'limit': '50', 'offset': '0'});
       final items = ((json as Map<String, dynamic>)['items'] as List).cast<Map<String, dynamic>>();
       setState(() {
         _learners = items;
@@ -260,29 +402,23 @@ class _AssignLearnerDialogState extends State<_AssignLearnerDialog> {
       });
     } on ApiException catch (e) {
       if (!mounted) return;
-      await showAppErrorPopup(context, title: 'Failed to load learners', message: e.message);
+      await showAppErrorPopup(context, title: 'Network Error', message: e.message);
     } finally {
       if (mounted) setState(() => _loadingLearners = false);
     }
   }
 
   Future<void> _save() async {
-    if (_learnerId == null) {
-      await showAppErrorPopup(context, title: 'No learners available', message: 'Create a learner user first.');
-      return;
-    }
+    if (_learnerId == null) return;
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _saving = true);
     try {
-      await widget.api.post('/admin/programs/${widget.programId}/assign-learner', body: {
-        'learnerId': _learnerId,
-      });
+      await widget.api.post('/admin/programs/${widget.programId}/assign-learner', body: {'learnerId': _learnerId});
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (!mounted) return;
-      await showAppErrorPopup(context, title: 'Assign failed', message: e.message);
+      await showAppErrorPopup(context, title: 'Assignment Failed', message: e.message);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -290,49 +426,41 @@ class _AssignLearnerDialogState extends State<_AssignLearnerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(32)),
         child: _loadingLearners
-            ? const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()))
+            ? const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()))
             : Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Assign learner', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
+                    Text('Onboard Learner', style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+                    Text('Select a learner to assign to this track.', style: textTheme.bodyMedium?.copyWith(color: scheme.outline)),
+                    const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
                       initialValue: _learnerId,
-                      items: _learners
-                          .map(
-                            (u) => DropdownMenuItem(
-                              value: u['id'] as String,
-                              child: Text(u['full_name']?.toString() ?? u['email']?.toString() ?? ''),
-                            ),
-                          )
-                          .toList(growable: false),
+                      items: _learners.map((u) => DropdownMenuItem(value: u['id'] as String, child: Text(u['full_name']?.toString() ?? u['email']?.toString() ?? ''))).toList(),
                       onChanged: (v) => setState(() => _learnerId = v),
-                      decoration: const InputDecoration(labelText: 'Learner', prefixIcon: Icon(Icons.person_outline)),
-                      validator: (v) => v == null || v.isEmpty ? 'Select a learner' : null,
+                      decoration: const InputDecoration(labelText: 'Available Learners', prefixIcon: Icon(Icons.person_pin_rounded)),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 32),
                     Row(
                       children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                        ),
+                        Expanded(child: TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel'))),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: FilledButton(
                             onPressed: _saving ? null : _save,
-                            child: _saving
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('Assign'),
+                            child: _saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Assign'),
                           ),
                         ),
                       ],
@@ -358,7 +486,6 @@ class _ChangeMentorDialog extends StatefulWidget {
 class _ChangeMentorDialogState extends State<_ChangeMentorDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _saving = false;
-
   bool _loadingMentors = true;
   List<Map<String, dynamic>> _mentors = const [];
   String? _mentorId;
@@ -372,11 +499,7 @@ class _ChangeMentorDialogState extends State<_ChangeMentorDialog> {
   Future<void> _loadMentors() async {
     setState(() => _loadingMentors = true);
     try {
-      final json = await widget.api.get('/admin/users', query: {
-        'role': 'mentor',
-        'limit': '50',
-        'offset': '0',
-      });
+      final json = await widget.api.get('/admin/users', query: {'role': 'mentor', 'limit': '50', 'offset': '0'});
       final items = ((json as Map<String, dynamic>)['items'] as List).cast<Map<String, dynamic>>();
       setState(() {
         _mentors = items;
@@ -384,29 +507,23 @@ class _ChangeMentorDialogState extends State<_ChangeMentorDialog> {
       });
     } on ApiException catch (e) {
       if (!mounted) return;
-      await showAppErrorPopup(context, title: 'Failed to load mentors', message: e.message);
+      await showAppErrorPopup(context, title: 'Network Error', message: e.message);
     } finally {
       if (mounted) setState(() => _loadingMentors = false);
     }
   }
 
   Future<void> _save() async {
-    if (_mentorId == null) {
-      await showAppErrorPopup(context, title: 'No mentors available', message: 'Create a mentor user first.');
-      return;
-    }
+    if (_mentorId == null) return;
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _saving = true);
     try {
-      await widget.api.post('/admin/programs/${widget.programId}/assign-mentor', body: {
-        'mentorId': _mentorId,
-      });
+      await widget.api.post('/admin/programs/${widget.programId}/assign-mentor', body: {'mentorId': _mentorId});
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (!mounted) return;
-      await showAppErrorPopup(context, title: 'Update failed', message: e.message);
+      await showAppErrorPopup(context, title: 'Update Failed', message: e.message);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -414,49 +531,41 @@ class _ChangeMentorDialogState extends State<_ChangeMentorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(32)),
         child: _loadingMentors
-            ? const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()))
+            ? const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()))
             : Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Change mentor', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
+                    Text('Delegate Mentor', style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+                    Text('Assign a new subject matter expert to oversee this program.', style: textTheme.bodyMedium?.copyWith(color: scheme.outline)),
+                    const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
                       initialValue: _mentorId,
-                      items: _mentors
-                          .map(
-                            (u) => DropdownMenuItem(
-                              value: u['id'] as String,
-                              child: Text(u['full_name']?.toString() ?? u['email']?.toString() ?? ''),
-                            ),
-                          )
-                          .toList(growable: false),
+                      items: _mentors.map((u) => DropdownMenuItem(value: u['id'] as String, child: Text(u['full_name']?.toString() ?? u['email']?.toString() ?? ''))).toList(),
                       onChanged: (v) => setState(() => _mentorId = v),
-                      decoration: const InputDecoration(labelText: 'Mentor', prefixIcon: Icon(Icons.support_agent_outlined)),
-                      validator: (v) => v == null || v.isEmpty ? 'Select a mentor' : null,
+                      decoration: const InputDecoration(labelText: 'Expert List', prefixIcon: Icon(Icons.admin_panel_settings_rounded)),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 32),
                     Row(
                       children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                        ),
+                        Expanded(child: TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(false), child: const Text('Discard'))),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: FilledButton(
                             onPressed: _saving ? null : _save,
-                            child: _saving
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('Save'),
+                            child: _saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Delegate'),
                           ),
                         ),
                       ],
@@ -494,7 +603,6 @@ class _CreateMilestoneDialogState extends State<_CreateMilestoneDialog> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _saving = true);
     try {
       await widget.api.post('/admin/programs/${widget.programId}/milestones', body: {
@@ -505,7 +613,7 @@ class _CreateMilestoneDialogState extends State<_CreateMilestoneDialog> {
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (!mounted) return;
-      await showAppErrorPopup(context, title: 'Create milestone failed', message: e.message);
+      await showAppErrorPopup(context, title: 'Milestone Error', message: e.message);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -513,45 +621,45 @@ class _CreateMilestoneDialogState extends State<_CreateMilestoneDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(32)),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Create milestone', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
+              Text('Initialize Milestone', style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+              Text('Create a new phase in the curriculum trail.', style: textTheme.bodyMedium?.copyWith(color: scheme.outline)),
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _title,
-                decoration: const InputDecoration(labelText: 'Title', prefixIcon: Icon(Icons.flag_outlined)),
-                validator: (v) => (v ?? '').trim().length < 2 ? 'Enter a title' : null,
+                decoration: const InputDecoration(labelText: 'Sequence Title', prefixIcon: Icon(Icons.flag_rounded)),
+                validator: (v) => (v ?? '').trim().length < 2 ? 'Required' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _sortOrder,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Sort order', prefixIcon: Icon(Icons.sort)),
-                validator: (v) => int.tryParse((v ?? '').trim()) == null ? 'Enter a number' : null,
+                decoration: const InputDecoration(labelText: 'Index Weight (Sort Order)', prefixIcon: Icon(Icons.reorder_rounded)),
+                validator: (v) => int.tryParse((v ?? '').trim()) == null ? 'Numeric required' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 32),
               Row(
                 children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
+                  Expanded(child: TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel'))),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
                       onPressed: _saving ? null : _save,
-                      child: _saving
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Create'),
+                      child: _saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Initialize'),
                     ),
                   ),
                 ],
@@ -581,7 +689,6 @@ class _CreateTaskDialogState extends State<_CreateTaskDialog> {
   final _description = TextEditingController();
   final _links = TextEditingController();
   final _deadlineLabel = TextEditingController();
-
   String? _milestoneId;
   DateTime? _deadlineAtLocal;
   bool _saving = false;
@@ -597,58 +704,36 @@ class _CreateTaskDialogState extends State<_CreateTaskDialog> {
 
   Future<void> _pickDeadline() async {
     final now = DateTime.now();
-    final initial = _deadlineAtLocal ?? now.add(const Duration(days: 1));
-
-    final date = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(now.year - 1, 1, 1),
-      lastDate: DateTime(now.year + 5, 12, 31),
-    );
-    if (!mounted) return;
-    if (date == null) return;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initial),
-    );
-    if (!mounted) return;
-    if (time == null) return;
-
+    final initial = _deadlineAtLocal ?? now.add(const Duration(days: 7));
+    final date = await showDatePicker(context: context, initialDate: initial, firstDate: DateTime(2020), lastDate: DateTime(2100));
+    if (!mounted || date == null) return;
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(initial));
+    if (!mounted || time == null) return;
     final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-    setState(() => _deadlineAtLocal = combined);
-    _deadlineLabel.text = MaterialLocalizations.of(context).formatFullDate(combined);
-    _deadlineLabel.text += ' • ${time.format(context)}';
+    setState(() {
+      _deadlineAtLocal = combined;
+      _deadlineLabel.text = '${date.year}-${date.month}-${date.day} ${time.format(context)}';
+    });
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
+    if (_deadlineAtLocal == null) return;
     setState(() => _saving = true);
     try {
-      final links = _links.text
-          .split('\n')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList(growable: false);
-
-      final deadlineAt = _deadlineAtLocal;
-      if (deadlineAt == null) {
-        throw const ApiException('Deadline required');
-      }
-
+      final resourceLinks = _links.text.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
       await widget.api.post('/admin/programs/${widget.programId}/tasks', body: {
         'milestoneId': _milestoneId,
         'title': _title.text.trim(),
         'description': _description.text.trim(),
-        'deadlineAt': deadlineAt.toUtc().toIso8601String(),
-        'resourceLinks': links,
+        'deadlineAt': _deadlineAtLocal!.toUtc().toIso8601String(),
+        'resourceLinks': resourceLinks,
       });
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (!mounted) return;
-      await showAppErrorPopup(context, title: 'Create task failed', message: e.message);
+      await showAppErrorPopup(context, title: 'Task Error', message: e.message);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -656,84 +741,68 @@ class _CreateTaskDialogState extends State<_CreateTaskDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.all(20),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(32)),
+        child: SingleChildScrollView(
           child: Form(
             key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Create task', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
+                Text('Draft Challenge', style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+                Text('Define a new curriculum task for this program.', style: textTheme.bodyMedium?.copyWith(color: scheme.outline)),
+                const SizedBox(height: 24),
                 DropdownButtonFormField<String?>(
                   initialValue: _milestoneId,
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('No milestone')),
-                    ...widget.milestones.map(
-                      (m) => DropdownMenuItem(value: m['id'] as String, child: Text(m['title']?.toString() ?? '')),
-                    ),
-                  ],
+                  items: [const DropdownMenuItem(value: null, child: Text('No Specific Milestone')), ...widget.milestones.map((m) => DropdownMenuItem(value: m['id'] as String, child: Text(m['title']?.toString() ?? '')))],
                   onChanged: (v) => setState(() => _milestoneId = v),
-                  decoration: const InputDecoration(labelText: 'Milestone', prefixIcon: Icon(Icons.flag_outlined)),
+                  decoration: const InputDecoration(labelText: 'Associate Phase', prefixIcon: Icon(Icons.auto_awesome_mosaic_rounded)),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _title,
-                  decoration: const InputDecoration(labelText: 'Title', prefixIcon: Icon(Icons.task_outlined)),
-                  validator: (v) => (v ?? '').trim().length < 2 ? 'Enter a title' : null,
+                  decoration: const InputDecoration(labelText: 'Challenge Title', prefixIcon: Icon(Icons.assignment_rounded)),
+                  validator: (v) => (v ?? '').trim().isEmpty ? 'Required' : null,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _deadlineLabel,
                   readOnly: true,
-                  onTap: _saving ? null : _pickDeadline,
-                  decoration: InputDecoration(
-                    labelText: 'Deadline',
-                    prefixIcon: const Icon(Icons.calendar_month_outlined),
-                    suffixIcon: IconButton(
-                      onPressed: _saving ? null : _pickDeadline,
-                      icon: const Icon(Icons.access_time),
-                      tooltip: 'Pick date & time',
-                    ),
-                  ),
-                  validator: (_) => _deadlineAtLocal == null ? 'Deadline required' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _description,
-                  minLines: 3,
-                  maxLines: 6,
-                  decoration: const InputDecoration(labelText: 'Description', prefixIcon: Icon(Icons.description_outlined)),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _links,
-                  minLines: 2,
-                  maxLines: 6,
-                  decoration: const InputDecoration(
-                    labelText: 'Resource links (one per line)',
-                    prefixIcon: Icon(Icons.link),
-                  ),
+                  onTap: _pickDeadline,
+                  decoration: const InputDecoration(labelText: 'Submission Threshold (Deadline)', prefixIcon: Icon(Icons.event_available_rounded)),
+                  validator: (v) => _deadlineAtLocal == null ? 'Select threshold' : null,
                 ),
                 const SizedBox(height: 16),
+                TextFormField(
+                  controller: _description,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Objectives & Details', prefixIcon: Icon(Icons.subject_rounded)),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _links,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Knowledge Bank (Links, newline separated)', prefixIcon: Icon(Icons.link_rounded)),
+                ),
+                const SizedBox(height: 32),
                 Row(
                   children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
+                    Expanded(child: TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(false), child: const Text('Discard'))),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: _saving ? null : _save,
-                        child: _saving
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Text('Create'),
+                        child: _saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Provision'),
                       ),
                     ),
                   ],

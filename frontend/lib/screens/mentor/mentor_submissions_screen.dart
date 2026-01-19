@@ -83,65 +83,141 @@ class _MentorSubmissionsScreenState extends State<MentorSubmissionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Submissions')),
+      backgroundColor: scheme.surfaceContainerHigh,
+      appBar: AppBar(
+        title: Text(
+          'Review Queue',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+      ),
       body: Column(
         children: [
-          SizedBox(
-            height: 54,
+          Container(
+            height: 64,
+            width: double.infinity,
+            color: scheme.surface,
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               scrollDirection: Axis.horizontal,
               children: [
-                _FilterChip(label: 'All', selected: _status == null, onTap: () => _setStatus(null)),
-                const SizedBox(width: 10),
+                _FilterChip(label: 'All Tasks', selected: _status == null, onTap: () => _setStatus(null)),
+                const SizedBox(width: 8),
                 _FilterChip(label: 'Submitted', selected: _status == 'submitted', onTap: () => _setStatus('submitted')),
-                const SizedBox(width: 10),
-                _FilterChip(label: 'Approved', selected: _status == 'approved', onTap: () => _setStatus('approved')),
-                const SizedBox(width: 10),
-                _FilterChip(label: 'Rejected', selected: _status == 'rejected', onTap: () => _setStatus('rejected')),
+                const SizedBox(width: 8),
+                _FilterChip(label: 'Pending Approval', selected: _status == 'approved', onTap: () => _setStatus('approved')),
+                const SizedBox(width: 8),
+                _FilterChip(label: 'Follow Up', selected: _status == 'rejected', onTap: () => _setStatus('rejected')),
               ],
             ),
           ),
+          const Divider(height: 1),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : RefreshIndicator(
                     onRefresh: () => _load(reset: true),
-                    child: ListView.separated(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _items.length + (_hasMore ? 1 : 0),
-                      separatorBuilder: (context, index) => const SizedBox(height: 10),
-                      itemBuilder: (ctx, i) {
-                        if (i == _items.length) {
-                          if (!_loadingMore) {
-                            _load(reset: false);
-                          }
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
+                    child: _items.isEmpty
+                        ? _EmptySubmissions(status: _status)
+                        : ListView.separated(
+                            padding: const EdgeInsets.all(20),
+                            itemCount: _items.length + (_hasMore ? 1 : 0),
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (ctx, i) {
+                              if (i == _items.length) {
+                                if (!_loadingMore) _load(reset: false);
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 24),
+                                  child: Center(child: CircularProgressIndicator()),
+                                );
+                              }
 
-                        final s = _items[i];
-                        return ListTile(
-                          tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          title: Text(s['task_title']?.toString() ?? ''),
-                          subtitle: Text(
-                            'Learner: ${s['learner_name'] ?? ''}\nStatus: ${s['status'] ?? ''}',
+                              final s = _items[i];
+                              final status = s['status']?.toString() ?? 'submitted';
+                              final learnerName = s['learner_name']?.toString() ?? 'Learner';
+                              final initial = learnerName.isNotEmpty ? learnerName[0].toUpperCase() : '?';
+
+                              final statusColor = switch (status) {
+                                'approved' => Colors.green,
+                                'submitted' => scheme.primary,
+                                'rejected' => Colors.redAccent,
+                                _ => scheme.outline,
+                              };
+
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: scheme.surface,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: scheme.outlineVariant),
+                                ),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () async {
+                                    final id = s['id'] as String?;
+                                    if (id == null) return;
+                                    await widget.openReview(id);
+                                    if (!mounted) return;
+                                    _load(reset: true);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor: scheme.primary.withValues(alpha: 0.1),
+                                          child: Text(
+                                            initial,
+                                            style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold, fontSize: 18),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                s['task_title']?.toString() ?? 'Untitled Task',
+                                                style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'From: $learnerName',
+                                                style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: statusColor.withValues(alpha: 0.1),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  status.toUpperCase(),
+                                                  style: TextStyle(
+                                                    color: statusColor,
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.w900,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(Icons.arrow_forward_ios_rounded, size: 14, color: scheme.outline),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () async {
-                            final id = s['id'] as String?;
-                            if (id == null) return;
-                            await widget.openReview(id);
-                            if (!mounted) return;
-                            _load(reset: true);
-                          },
-                        );
-                      },
-                    ),
                   ),
           ),
         ],
@@ -159,10 +235,54 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? scheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: selected ? scheme.primary : scheme.outlineVariant),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptySubmissions extends StatelessWidget {
+  final String? status;
+  const _EmptySubmissions({this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.task_rounded, size: 64, color: scheme.outline),
+          const SizedBox(height: 16),
+          Text(
+            'No submissions found',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'All caught up for ${status ?? 'all'} status.',
+            style: TextStyle(color: scheme.onSurfaceVariant),
+          ),
+        ],
+      ),
     );
   }
 }

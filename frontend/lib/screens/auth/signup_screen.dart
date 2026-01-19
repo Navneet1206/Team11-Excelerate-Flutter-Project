@@ -60,152 +60,154 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Learner Signup'),
-      ),
       body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: scheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(Icons.person_add_alt_1_outlined, color: scheme.onSecondaryContainer),
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Premium Header
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: scheme.secondary.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Create your learner account', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-                            const SizedBox(height: 2),
-                            Text('You will be signed in after signup.', style: Theme.of(context).textTheme.bodyMedium),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Card(
-                        elevation: 0,
-                        color: Theme.of(context).colorScheme.surface,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-                                TextFormField(
-                                  controller: _fullName,
-                                  textInputAction: TextInputAction.next,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Full name',
-                                    prefixIcon: Icon(Icons.person_outline),
-                                  ),
-                                  validator: (v) {
-                                    final value = (v ?? '').trim();
-                                    if (value.isEmpty) return 'Full name is required';
-                                    if (value.length < 2) return 'Enter a valid name';
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _email,
-                                  keyboardType: TextInputType.emailAddress,
-                                  autofillHints: const [AutofillHints.email],
-                                  textInputAction: TextInputAction.next,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
-                                    prefixIcon: Icon(Icons.mail_outline),
-                                  ),
-                                  validator: (v) {
-                                    final value = (v ?? '').trim();
-                                    if (value.isEmpty) return 'Email is required';
-                                    if (!value.contains('@')) return 'Enter a valid email';
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _password,
-                                  obscureText: _obscure,
-                                  autofillHints: const [AutofillHints.newPassword],
-                                  textInputAction: TextInputAction.next,
-                                  decoration: InputDecoration(
-                                    labelText: 'Password',
-                                    prefixIcon: const Icon(Icons.lock_outline),
-                                    suffixIcon: IconButton(
-                                      onPressed: () => setState(() => _obscure = !_obscure),
-                                      icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
-                                    ),
-                                  ),
-                                  validator: (v) {
-                                    final value = v ?? '';
-                                    if (value.isEmpty) return 'Password is required';
-                                    if (value.length < 6) return 'Minimum 6 characters';
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _confirmPassword,
-                                  obscureText: _obscure,
-                                  autofillHints: const [AutofillHints.newPassword],
-                                  textInputAction: TextInputAction.done,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Confirm password',
-                                    prefixIcon: Icon(Icons.lock_outline),
-                                  ),
-                                  validator: (v) {
-                                    final value = v ?? '';
-                                    if (value.isEmpty) return 'Confirm your password';
-                                    if (value != _password.text) return 'Passwords do not match';
-                                    return null;
-                                  },
-                                  onFieldSubmitted: (_) => _loading ? null : _submit(),
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: FilledButton(
-                                    onPressed: _loading ? null : _submit,
-                                    child: _loading
-                                        ? const SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          )
-                                        : const Text('Create account'),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                TextButton(
-                                  onPressed: _loading ? null : () => context.go('/login'),
-                                  child: const Text('Already have an account? Sign in'),
-                                ),
-                              ],
+                      child: Column(
+                        children: [
+                          Icon(Icons.person_add_rounded, size: 48, color: scheme.secondary),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Join SkillTrack',
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: scheme.onSurface,
+                              letterSpacing: -1,
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Begin your learning journey today',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 32),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _fullName,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Full Name',
+                              prefixIcon: Icon(Icons.person_outline_rounded),
+                            ),
+                            validator: (v) {
+                              final value = (v ?? '').trim();
+                              if (value.isEmpty) return 'Full name is required';
+                              if (value.length < 2) return 'Enter a valid name';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Email Address',
+                              prefixIcon: Icon(Icons.mail_outline_rounded),
+                            ),
+                            validator: (v) {
+                              final value = (v ?? '').trim();
+                              if (value.isEmpty) return 'Email is required';
+                              if (!value.contains('@')) return 'Enter a valid email';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _password,
+                            obscureText: _obscure,
+                            autofillHints: const [AutofillHints.newPassword],
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              labelText: 'Create Password',
+                              prefixIcon: const Icon(Icons.lock_outline_rounded),
+                              suffixIcon: IconButton(
+                                onPressed: () => setState(() => _obscure = !_obscure),
+                                icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                              ),
+                            ),
+                            validator: (v) {
+                              final value = v ?? '';
+                              if (value.isEmpty) return 'Password is required';
+                              if (value.length < 6) return 'Minimum 6 characters';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _confirmPassword,
+                            obscureText: _obscure,
+                            autofillHints: const [AutofillHints.newPassword],
+                            textInputAction: TextInputAction.done,
+                            decoration: const InputDecoration(
+                              labelText: 'Confirm Password',
+                              prefixIcon: Icon(Icons.lock_clock_outlined),
+                            ),
+                            validator: (v) {
+                              final value = v ?? '';
+                              if (value.isEmpty) return 'Confirm your password';
+                              if (value != _password.text) return 'Passwords do not match';
+                              return null;
+                            },
+                            onFieldSubmitted: (_) => _loading ? null : _submit(),
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton(
+                            style: FilledButton.styleFrom(backgroundColor: scheme.secondary, foregroundColor: Colors.white),
+                            onPressed: _loading ? null : _submit,
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                                  )
+                                : const Text('Create Account'),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Already have an account?', style: textTheme.bodyMedium),
+                              TextButton(
+                                onPressed: _loading ? null : () => context.go('/login'),
+                                child: const Text('Sign In'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

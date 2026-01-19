@@ -36,15 +36,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _markRead(String id) async {
-    try {
-      await widget.api.post('/notifications/$id/read', auth: true);
-      await _load();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      showAppSnack(context, e.message);
-    }
-  }
 
   Future<void> _markReadLocal(String id) async {
     try {
@@ -90,75 +81,163 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final items = _items;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      backgroundColor: scheme.surfaceContainerHigh,
+      appBar: AppBar(
+        title: Text(
+          'Notifications',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        actions: [
+          if (items.any((n) => n['read_at'] == null))
+            TextButton(
+              onPressed: () async {
+                final unreadIds = items.where((n) => n['read_at'] == null).map((n) => n['id'] as String).toList();
+                for (final id in unreadIds) {
+                  await _markReadLocal(id);
+                }
+              },
+              child: const Text('Read All'),
+            ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: items.isEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Card(
-                          elevation: 0,
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('No notifications', style: Theme.of(context).textTheme.titleMedium),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Notifications appear when learners submit tasks and when mentors review submissions.\n\nPull down to refresh.',
-                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
+                  ? _EmptyNotifications()
                   : ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      itemCount: items.length,
+                      separatorBuilder: (ctx, i) => const SizedBox(height: 12),
                       itemBuilder: (ctx, i) {
                         final n = items[i];
                         final readAt = n['read_at'];
                         final isUnread = readAt == null;
-                        return ListTile(
-                          tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          leading: isUnread
-                              ? Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                )
-                              : const Icon(Icons.notifications_none),
-                          title: Text(
-                            n['title']?.toString() ?? 'Notification',
-                            style: isUnread ? const TextStyle(fontWeight: FontWeight.w700) : null,
+                        
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: scheme.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isUnread ? scheme.primary.withValues(alpha: 0.1) : scheme.outlineVariant,
+                              width: isUnread ? 1.5 : 1,
+                            ),
                           ),
-                          subtitle: Text(n['body']?.toString() ?? ''),
-                          trailing: readAt == null
-                              ? TextButton(
-                                  onPressed: () => _markRead(n['id'] as String),
-                                  child: const Text('Mark read'),
-                                )
-                              : const Icon(Icons.done_all),
-                          onTap: () => _openNotification(n),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => _openNotification(n),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Leading Icon/Dot
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: isUnread ? scheme.primary.withValues(alpha: 0.1) : scheme.surfaceContainerHigh,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      isUnread ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
+                                      color: isUnread ? scheme.primary : scheme.outline,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Content
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                n['title']?.toString() ?? 'Update',
+                                                style: textTheme.titleSmall?.copyWith(
+                                                  fontWeight: isUnread ? FontWeight.w900 : FontWeight.w700,
+                                                  color: isUnread ? scheme.onSurface : scheme.onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ),
+                                            if (isUnread)
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  color: scheme.primary,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          n['body']?.toString() ?? '',
+                                          style: textTheme.bodyMedium?.copyWith(
+                                            color: scheme.onSurfaceVariant,
+                                            height: 1.4,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         );
                       },
-                      separatorBuilder: (ctx, i) => const SizedBox(height: 10),
-                      itemCount: items.length,
                     ),
             ),
+    );
+  }
+}
+
+class _EmptyNotifications extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.notifications_off_rounded, size: 32, color: scheme.outline),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'All Caught Up!',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'New updates about your tasks and programs will appear here.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -85,158 +85,365 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final task = _task;
     if (task == null) {
-      return const Scaffold(body: Center(child: Text('Task not found')));
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('Task not found')),
+      );
     }
 
     final links = (task['resource_links'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[];
-
     final submissionStatus = task['submission_status']?.toString() ?? 'not_submitted';
     final hasSubmitted = submissionStatus != 'not_submitted' && submissionStatus.isNotEmpty;
     final feedback = task['feedback_text']?.toString();
     final score = task['score']?.toString();
     final submittedLink = task['submission_link']?.toString();
     final submittedNotes = task['submission_notes']?.toString();
+    final deadline = task['deadline_at']?.toString() ?? 'No deadline';
+
+    final statusColor = switch (submissionStatus) {
+      'approved' => Colors.green,
+      'pending' || 'submitted' => Colors.orange,
+      'rejected' => Colors.red,
+      _ => scheme.outline,
+    };
 
     return Scaffold(
-      appBar: AppBar(title: Text(task['title']?.toString() ?? 'Task')),
+      backgroundColor: scheme.surfaceContainerHigh,
+      appBar: AppBar(
+        title: Text(
+          'Deliverable',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         children: [
-          Text(task['description']?.toString() ?? '', style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: 12),
-          Card(
-            elevation: 0,
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: ListTile(
-              title: const Text('Deadline'),
-              subtitle: Text(task['deadline_at']?.toString() ?? ''),
+          // Task Title & Description Card
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: scheme.outlineVariant),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text('Resources', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          if (links.isEmpty)
-            Text('No links provided.', style: Theme.of(context).textTheme.bodyMedium)
-          else
-            ...links.map(
-              (l) => Card(
-                elevation: 0,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: ListTile(
-                  title: Text(l),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.copy),
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: l));
-                      if (!context.mounted) return;
-                      showAppSnack(context, 'Copied');
-                    },
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(height: 16),
-          Text('Submission', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Card(
-            elevation: 0,
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('Status: $submissionStatus'),
-                  if (score != null) Text('Score: $score'),
-                  if (feedback != null && feedback.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Text('Feedback:', style: Theme.of(context).textTheme.labelLarge),
-                    const SizedBox(height: 4),
-                    Text(feedback),
-                  ],
-                  const SizedBox(height: 12),
-                  if (hasSubmitted) ...[
-                    if (submittedLink != null && submittedLink.isNotEmpty)
-                      Card(
-                        elevation: 0,
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: ListTile(
-                          title: const Text('Submitted link'),
-                          subtitle: Text(submittedLink),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.copy),
-                            onPressed: () async {
-                              await Clipboard.setData(ClipboardData(text: submittedLink));
-                              if (!context.mounted) return;
-                              showAppSnack(context, 'Copied');
-                            },
-                          ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        submissionStatus.replaceAll('_', ' ').toUpperCase(),
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.1,
                         ),
                       ),
-                    if (submittedNotes != null && submittedNotes.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text('Notes:', style: Theme.of(context).textTheme.labelLarge),
-                      const SizedBox(height: 4),
-                      Text(submittedNotes),
-                    ],
-                    const SizedBox(height: 10),
-                    Text(
-                      'Submission is locked after submitting.',
-                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                  ] else
-                    Form(
-                      key: _formKey,
-                      child: Column(
+                    const Spacer(),
+                    Icon(Icons.event_available_rounded, size: 14, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text(
+                      deadline,
+                      style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  task['title']?.toString() ?? 'Untitled Task',
+                  style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  task['description']?.toString() ?? '',
+                  style: textTheme.bodyMedium?.copyWith(height: 1.6, color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Resources Section
+          _buildSectionHeader(context, 'Learning Resources', Icons.library_books_rounded),
+          const SizedBox(height: 12),
+          if (links.isEmpty)
+            _EmptyState(message: 'No extra resources provided.', icon: Icons.link_off_rounded)
+          else
+            ...links.map((l) => _ResourceCard(link: l)),
+
+          const SizedBox(height: 32),
+
+          // Submission Section
+          _buildSectionHeader(context, 'Your Submission', Icons.upload_file_rounded),
+          const SizedBox(height: 12),
+
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: scheme.outlineVariant),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (score != null) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Submission Score', style: TextStyle(fontWeight: FontWeight.w700)),
+                      Text(
+                        score,
+                        style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900, color: scheme.primary),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 32),
+                ],
+
+                if (hasSubmitted) ...[
+                  if (submittedLink != null && submittedLink.isNotEmpty) ...[
+                    Text('SUBMITTED LINK', style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: scheme.primary)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
                         children: [
-                          TextFormField(
-                            controller: _link,
-                            decoration: const InputDecoration(
-                              labelText: 'GitHub/Drive link',
-                              prefixIcon: Icon(Icons.link),
+                          Expanded(
+                            child: Text(
+                              submittedLink,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: scheme.primary,
+                                decoration: TextDecoration.underline,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            validator: (v) {
-                              final value = (v ?? '').trim();
-                              if (value.isEmpty) return 'Link is required';
-                              if (!value.startsWith('http') && !value.startsWith('www.')) return 'Enter a valid URL';
-                              return null;
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy_rounded, size: 18),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: submittedLink));
+                              showAppSnack(context, 'Link copied');
                             },
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _notes,
-                            minLines: 3,
-                            maxLines: 6,
-                            decoration: const InputDecoration(
-                              labelText: 'Notes',
-                              prefixIcon: Icon(Icons.notes_outlined),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton(
-                              onPressed: _submitting ? null : _submit,
-                              child: _submitting
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Text('Submit'),
-                            ),
                           ),
                         ],
                       ),
                     ),
-                ],
+                  ],
+                  if (submittedNotes != null && submittedNotes.trim().isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text('SUBMISSION NOTES', style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: scheme.primary)),
+                    const SizedBox(height: 8),
+                    Text(submittedNotes, style: textTheme.bodyMedium),
+                  ],
+                  if (feedback != null && feedback.trim().isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.feedback_outlined, size: 16, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Text('MENTOR FEEDBACK', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w900, fontSize: 10)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(feedback, style: const TextStyle(fontSize: 13, height: 1.5)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  const _InfoBanner(
+                    message: 'Your submission is now locked for review.',
+                    icon: Icons.lock_outline_rounded,
+                  ),
+                ] else
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _link,
+                          decoration: const InputDecoration(
+                            labelText: 'Link to Deliverable',
+                            hintText: 'e.g. GitHub repo, Drive folder...',
+                            prefixIcon: Icon(Icons.link_rounded),
+                          ),
+                          validator: (v) {
+                            final value = (v ?? '').trim();
+                            if (value.isEmpty) return 'Please provide a link';
+                            if (!value.startsWith('http') && !value.startsWith('www.')) return 'Enter a valid URL';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: _notes,
+                          minLines: 3,
+                          maxLines: 6,
+                          decoration: const InputDecoration(
+                            labelText: 'Submission Notes',
+                            prefixIcon: Icon(Icons.description_outlined),
+                            alignLabelWithHint: true,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: FilledButton(
+                            onPressed: _submitting ? null : _submit,
+                            child: _submitting
+                                ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                                : const Text('Confirm Submission'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: scheme.primary),
+        const SizedBox(width: 8),
+        Text(
+          title.toUpperCase(),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: scheme.primary,
+                letterSpacing: 1.1,
               ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ResourceCard extends StatelessWidget {
+  final String link;
+  const _ResourceCard({required this.link});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.attachment_rounded, size: 20),
+        title: Text(
+          link,
+          style: const TextStyle(fontSize: 13, decoration: TextDecoration.underline),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.copy_rounded, size: 18),
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: link));
+            showAppSnack(context, 'Link copied');
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String message;
+  final IconData icon;
+  const _EmptyState({required this.message, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 32, color: scheme.outline),
+          const SizedBox(height: 12),
+          Text(message, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoBanner extends StatelessWidget {
+  final String message;
+  final IconData icon;
+  const _InfoBanner({required this.message, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: scheme.primary, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ),
         ],

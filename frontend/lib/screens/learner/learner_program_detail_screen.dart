@@ -7,7 +7,7 @@ import '../../ui/app_popups.dart';
 class LearnerProgramDetailScreen extends StatefulWidget {
   final ApiClient api;
   final String programId;
-  final void Function(String taskId) openTask;
+  final Future<void> Function(String taskId) openTask;
 
   const LearnerProgramDetailScreen({
     super.key,
@@ -53,13 +53,21 @@ class _LearnerProgramDetailScreenState extends State<LearnerProgramDetailScreen>
       final progress = await widget.api.get('/learner/programs/${widget.programId}/progress');
       final milestones = await widget.api.get('/learner/programs/${widget.programId}/milestones');
 
+      final milestonesFull = milestones as Map<String, dynamic>;
+      final milestoneItems = (milestonesFull['items'] as List).cast<Map<String, dynamic>>();
+
+      final List<String> activeModuleIds = _moduleTasks.entries
+          .where((e) => e.value.loadedOnce && e.key != null)
+          .map((e) => e.key!)
+          .toList();
+      final bool generalWasLoaded = _moduleTasks[null]?.loadedOnce ?? false;
+
       setState(() {
         _progress = progress as Map<String, dynamic>;
-        _milestones = ((milestones as Map<String, dynamic>)['items'] as List).cast<Map<String, dynamic>>();
+        _milestones = milestoneItems;
 
         _moduleTasks.clear();
         _moduleChapters.clear();
-        // Include a "General" bucket for deliverables not assigned to a module.
         _moduleTasks[null] = _ModuleTasksState();
         for (final m in _milestones) {
           final id = m['id'] as String;
@@ -67,6 +75,12 @@ class _LearnerProgramDetailScreenState extends State<LearnerProgramDetailScreen>
           _moduleChapters[id] = _ModuleChaptersState();
         }
       });
+
+      if (generalWasLoaded) _loadModuleTasks(null, reset: true);
+      for (final id in activeModuleIds) {
+        _loadModuleTasks(id, reset: true);
+        _loadModuleChapters(id);
+      }
 
       await _loadReviewIfEligible();
     } on ApiException catch (e) {
@@ -196,224 +210,180 @@ class _LearnerProgramDetailScreenState extends State<LearnerProgramDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final stats = _progress;
-    final completion = stats?['completionPercentage']?.toString() ?? '0';
     final completionInt = (stats?['completionPercentage'] as num?)?.toInt() ?? 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Program')),
+      backgroundColor: scheme.surfaceContainerHigh,
+      appBar: AppBar(
+        title: Text(
+          'Learning Journey',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 children: [
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _StatCard(label: 'Total tasks', value: '${stats?['total_tasks'] ?? 0}'),
-                      _StatCard(label: 'Approved', value: '${stats?['approved'] ?? 0}'),
-                      _StatCard(label: 'Pending', value: '${stats?['pending'] ?? 0}'),
-                      _StatCard(label: 'Completion', value: '$completion%'),
-                    ],
+                   // High-level stats header
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _StatCard(
+                          label: 'Total Tasks',
+                          value: '${stats?['total_tasks'] ?? 0}',
+                          icon: Icons.assignment_outlined,
+                          color: scheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        _StatCard(
+                          label: 'Approved',
+                          value: '${stats?['approved'] ?? 0}',
+                          icon: Icons.check_circle_outline_rounded,
+                          color: scheme.secondary,
+                        ),
+                        const SizedBox(width: 12),
+                        _StatCard(
+                          label: 'Completion',
+                          value: '$completionInt%',
+                          icon: Icons.auto_awesome_outlined,
+                          color: Colors.amber,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 18),
-                  Text('Modules', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 10),
+
+                  const SizedBox(height: 32),
+                  
+                  Text(
+                    'Program Modules',
+                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 12),
+
                   if (_milestones.isEmpty)
-                    Card(
-                      elevation: 0,
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: const Padding(
-                        padding: EdgeInsets.all(14),
-                        child: Text('No modules available yet.'),
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: scheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: scheme.outlineVariant),
                       ),
+                      child: const Center(child: Text('No modules available yet.')),
                     )
                   else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      separatorBuilder: (context, index) => const SizedBox(height: 10),
-                      itemCount: _milestones.length,
-                      itemBuilder: (ctx, i) {
-                        final m = _milestones[i];
-                        final moduleId = m['id'] as String;
-                        final moduleTitle = m['title']?.toString() ?? 'Module ${i + 1}';
+                    ..._milestones.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final m = entry.value;
+                      final moduleId = m['id'] as String;
+                      final moduleTitle = m['title']?.toString() ?? 'Module ${i + 1}';
 
-                        final tasksState = _moduleTasks[moduleId];
-                        final chaptersState = _moduleChapters[moduleId];
+                      final tasksState = _moduleTasks[moduleId];
+                      final chaptersState = _moduleChapters[moduleId];
 
-                        final taskItems = tasksState?.items ?? const <Map<String, dynamic>>[];
-                        final approvedCount = taskItems
-                            .where((t) => (t['submission_status']?.toString() ?? '') == 'approved')
-                            .length;
-                        final totalCount = taskItems.length;
+                      final taskItems = tasksState?.items ?? const <Map<String, dynamic>>[];
+                      final approvedCount = taskItems.where((t) => (t['submission_status']?.toString() ?? '') == 'approved').length;
+                      final totalCount = taskItems.length;
 
-                        return Card(
-                          elevation: 0,
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: ExpansionTile(
-                            title: Text(moduleTitle),
-                            subtitle: (tasksState?.loadedOnce ?? false)
-                                ? Text('Deliverables: $approvedCount/$totalCount approved')
-                                : const Text('Tap to view chapters & deliverables'),
-                            onExpansionChanged: (expanded) {
-                              if (!expanded) return;
-                              if (chaptersState != null && !chaptersState.loadedOnce && !chaptersState.loading) {
-                                _loadModuleChapters(moduleId);
-                              }
-                              if (tasksState != null && !tasksState.loadedOnce && !tasksState.loading) {
-                                _loadModuleTasks(moduleId, reset: true);
-                              }
-                            },
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Text('Chapters', style: Theme.of(context).textTheme.titleSmall),
-                                    const SizedBox(height: 8),
-                                    if (chaptersState == null)
-                                      const SizedBox.shrink()
-                                    else if (chaptersState.loading && chaptersState.items.isEmpty)
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 10),
-                                        child: Center(child: CircularProgressIndicator()),
-                                      )
-                                    else if (chaptersState.loadedOnce && chaptersState.items.isEmpty)
-                                      const Padding(
-                                        padding: EdgeInsets.only(bottom: 10),
-                                        child: Text('No chapters in this module.'),
-                                      )
-                                    else
-                                      ListView.separated(
-                                        shrinkWrap: true,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        itemCount: chaptersState.items.length,
-                                        separatorBuilder: (context, index) => const SizedBox(height: 10),
-                                        itemBuilder: (context, index) {
-                                          final ch = chaptersState.items[index];
-                                          final title = ch['title']?.toString() ?? 'Chapter ${index + 1}';
-                                          final bodyMd = ch['body_md']?.toString() ?? '';
-                                          return Card(
-                                            elevation: 0,
-                                            color: Theme.of(context).colorScheme.surface,
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(12),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                                children: [
-                                                  Text(title, style: Theme.of(context).textTheme.titleSmall),
-                                                  const SizedBox(height: 8),
-                                                  MarkdownBody(
-                                                    data: bodyMd,
-                                                    selectable: true,
-                                                    styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-                                                      p: Theme.of(context).textTheme.bodyMedium,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    const SizedBox(height: 14),
-                                    Text('Deliverables', style: Theme.of(context).textTheme.titleSmall),
-                                    const SizedBox(height: 8),
-                                    if (tasksState == null)
-                                      const SizedBox.shrink()
-                                    else if (tasksState.loading && tasksState.items.isEmpty)
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 10),
-                                        child: Center(child: CircularProgressIndicator()),
-                                      )
-                                    else if (tasksState.loadedOnce && tasksState.items.isEmpty)
-                                      const Padding(
-                                        padding: EdgeInsets.only(bottom: 10),
-                                        child: Text('No deliverables (no submission required).'),
-                                      )
-                                    else
-                                      Column(
-                                        children: [
-                                          ListView.separated(
-                                            shrinkWrap: true,
-                                            physics: const NeverScrollableScrollPhysics(),
-                                            itemCount: tasksState.items.length,
-                                            separatorBuilder: (context, index) => const SizedBox(height: 10),
-                                            itemBuilder: (context, index) {
-                                              final t = tasksState.items[index];
-                                              final status = t['submission_status']?.toString() ?? 'not_submitted';
-                                              final deadline = t['deadline_at']?.toString();
-                                              return ListTile(
-                                                tileColor: Theme.of(context).colorScheme.surface,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                                title: Text(t['title']?.toString() ?? ''),
-                                                subtitle: Text('Status: $status${deadline == null ? '' : '\nDeadline: $deadline'}'),
-                                                trailing: const Icon(Icons.chevron_right),
-                                                onTap: () => widget.openTask(t['id'] as String),
-                                              );
-                                            },
-                                          ),
-                                          const SizedBox(height: 10),
-                                          if (tasksState.hasMore)
-                                            SizedBox(
-                                              width: double.infinity,
-                                              child: OutlinedButton(
-                                                onPressed: tasksState.loadingMore
-                                                    ? null
-                                                    : () => _loadModuleTasks(moduleId, reset: false),
-                                                child: tasksState.loadingMore
-                                                    ? const SizedBox(
-                                                        height: 18,
-                                                        width: 18,
-                                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                                      )
-                                                    : const Text('Load more'),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: scheme.surface,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: scheme.outlineVariant),
                           ),
-                        );
-                      },
-                    ),
-
-                  const SizedBox(height: 18),
-                  Text('Program review', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 10),
-                  if (completionInt < 100)
-                    Card(
-                      elevation: 0,
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.info_outline),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Complete all program tasks to leave a review. Your completion is $completion%.',
-                                style: Theme.of(context).textTheme.bodyMedium,
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              leading: CircleAvatar(
+                                backgroundColor: scheme.primary.withValues(alpha: 0.1),
+                                child: Text('${i + 1}', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold)),
                               ),
+                              title: Text(moduleTitle, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                              subtitle: (tasksState?.loadedOnce ?? false)
+                                  ? Text('$approvedCount/$totalCount deliverables approved', style: textTheme.bodySmall)
+                                  : const Text('Tap to explore content', style: TextStyle(fontSize: 12)),
+                              onExpansionChanged: (expanded) {
+                                if (!expanded) return;
+                                if (chaptersState != null && !chaptersState.loadedOnce && !chaptersState.loading) {
+                                  _loadModuleChapters(moduleId);
+                                }
+                                if (tasksState != null && !tasksState.loadedOnce && !tasksState.loading) {
+                                  _loadModuleTasks(moduleId, reset: true);
+                                }
+                              },
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      const Divider(),
+                                      const SizedBox(height: 12),
+                                      _buildSectionHeader(context, 'Chapters', Icons.menu_book_rounded),
+                                      const SizedBox(height: 12),
+                                      if (chaptersState?.loading == true && chaptersState?.items.isEmpty == true)
+                                        const Center(child: CircularProgressIndicator())
+                                      else if (chaptersState?.loadedOnce == true && chaptersState?.items.isEmpty == true)
+                                        const Text('No technical chapters found.', style: TextStyle(fontStyle: FontStyle.italic))
+                                      else
+                                        ...chaptersState!.items.map((ch) => _ChapterCard(ch: ch)),
+
+                                      const SizedBox(height: 24),
+                                      _buildSectionHeader(context, 'Deliverables', Icons.task_alt_rounded),
+                                      const SizedBox(height: 12),
+                                      if (tasksState?.loading == true && tasksState?.items.isEmpty == true)
+                                        const Center(child: CircularProgressIndicator())
+                                      else if (tasksState?.loadedOnce == true && tasksState?.items.isEmpty == true)
+                                        const Text('No deliverables required.', style: TextStyle(fontStyle: FontStyle.italic))
+                                      else
+                                        ...tasksState!.items.map((t) => _TaskTile(
+                                              t: t,
+                                              onTap: (taskId) async {
+                                                await widget.openTask(taskId);
+                                                _load(); // Refresh stats and statuses on return
+                                              },
+                                            )),
+
+                                      if (tasksState?.hasMore == true)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 12),
+                                          child: TextButton(
+                                            onPressed: tasksState?.loadingMore == true ? null : () => _loadModuleTasks(moduleId, reset: false),
+                                            child: Text(tasksState?.loadingMore == true ? 'Loading...' : 'Show More Tasks'),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                      );
+                    }),
+
+                  const SizedBox(height: 32),
+                  Text(
+                    'Program Feedback',
+                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 12),
+                  if (completionInt < 100)
+                    _InfoBanner(
+                      message: 'Complete all requirements (100%) to unlock program feedback. Current: $completionInt%',
+                      icon: Icons.lock_outline_rounded,
                     )
                   else if (_loadingReview)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 18),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
+                    const Center(child: CircularProgressIndicator())
                   else
                     _ProgramReviewCard(
                       status: _reviewStatus,
@@ -423,9 +393,170 @@ class _LearnerProgramDetailScreenState extends State<LearnerProgramDetailScreen>
                       submitting: _submittingReview,
                       onSubmit: _submitReview,
                     ),
+                   const SizedBox(height: 40),
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: scheme.primary),
+        const SizedBox(width: 8),
+        Text(
+          title.toUpperCase(),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: scheme.primary,
+                letterSpacing: 1.1,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChapterCard extends StatelessWidget {
+  final Map<String, dynamic> ch;
+  const _ChapterCard({required this.ch});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final title = ch['title']?.toString() ?? 'Untitled Chapter';
+    final bodyMd = ch['body_md']?.toString() ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 12),
+          MarkdownBody(
+            data: bodyMd,
+            selectable: true,
+            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+              p: textTheme.bodyMedium?.copyWith(height: 1.6, color: scheme.onSurfaceVariant),
+              h1: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              code: TextStyle(backgroundColor: scheme.surface, fontFamily: 'monospace'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskTile extends StatelessWidget {
+  final Map<String, dynamic> t;
+  final ValueChanged<String> onTap;
+  const _TaskTile({required this.t, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final status = t['submission_status']?.toString() ?? 'not_submitted';
+    final deadline = t['deadline_at']?.toString();
+
+    final statusColor = switch (status) {
+      'approved' => Colors.green,
+      'pending' || 'submitted' => Colors.orange,
+      'rejected' => Colors.red,
+      _ => scheme.onSurfaceVariant,
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () => onTap(t['id'] as String),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: scheme.outlineVariant),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(t['title']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            status.replaceAll('_', ' ').toUpperCase(),
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
+                          ),
+                          if (deadline != null) ...[
+                            const SizedBox(width: 12),
+                            Icon(Icons.timer_outlined, size: 12, color: scheme.onSurfaceVariant),
+                            const SizedBox(width: 4),
+                            Text(deadline, style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant)),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded, size: 14, color: scheme.outline),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoBanner extends StatelessWidget {
+  final String message;
+  final IconData icon;
+  const _InfoBanner({required this.message, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.secondary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.secondary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: scheme.secondary, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: scheme.secondary, fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -449,161 +580,85 @@ class _ProgramReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (status == null) {
-      return Card(
-        elevation: 0,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              const Icon(Icons.wifi_off),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Unable to load review status. Pull to refresh and try again.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    if (status == null) return const _InfoBanner(message: 'Loading review eligibility...', icon: Icons.refresh_rounded);
 
     final review = (status?['review'] as Map?)?.cast<String, dynamic>();
-    final eligible = status?['eligible'] == true;
-    final totalTasks = status?['totalTasks'];
-    final approvedTasks = status?['approvedTasks'];
-
     if (review != null) {
       final r = (review['rating'] as num?)?.toInt() ?? 0;
-      final feedback = review['feedback']?.toString() ?? '';
-      return Card(
-        elevation: 0,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Your review', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              Text(_stars(r), style: Theme.of(context).textTheme.titleMedium),
-              if (feedback.trim().isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(feedback, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (!eligible) {
-      return Card(
-        elevation: 0,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              const Icon(Icons.info_outline),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'You can review after all tasks are approved ($approvedTasks/$totalTasks).',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.outlineVariant)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Leave a review', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final v in [1, 2, 3, 4, 5])
-                  ChoiceChip(
-                    label: Text('$v'),
-                    selected: rating == v,
-                    onSelected: (_) => onRatingChanged(v),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              minLines: 3,
-              maxLines: 6,
-              maxLength: 2000,
-              decoration: const InputDecoration(
-                labelText: 'Feedback (optional)',
-                hintText: 'What went well? What could be improved?',
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: submitting ? null : onSubmit,
-                child: submitting
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Submit review'),
-              ),
-            ),
+            Text('YOUR REVIEW', style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: scheme.primary)),
+            const SizedBox(height: 12),
+            Row(children: [for (int i = 0; i < 5; i++) Icon(i < r ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber, size: 20)]),
+            if (review['feedback'] != null) ...[const SizedBox(height: 12), Text(review['feedback'], style: textTheme.bodyMedium)],
           ],
         ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(28), border: Border.all(color: scheme.outlineVariant)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+           const Text('How was your experience?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+           const SizedBox(height: 16),
+           Row(
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [for (int i = 1; i <= 5; i++) IconButton(
+               onPressed: () => onRatingChanged(i),
+               icon: Icon(i <= rating ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber, size: 36),
+             )],
+           ),
+           const SizedBox(height: 16),
+           TextField(
+             controller: controller,
+             minLines: 3,
+             maxLines: 5,
+             decoration: const InputDecoration(hintText: 'Share your thoughts on this program...', labelText: 'Feedback'),
+           ),
+           const SizedBox(height: 24),
+           FilledButton(
+             onPressed: submitting ? null : onSubmit,
+             child: submitting ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2) : const Text('Submit Feedback'),
+           ),
+        ],
       ),
     );
-  }
-
-  static String _stars(int rating) {
-    final clamped = rating.clamp(0, 5);
-    return List.generate(5, (i) => i < clamped ? '★' : '☆').join();
   }
 }
 
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;
+  final IconData icon;
+  final Color color;
 
-  const _StatCard({required this.label, required this.value});
+  const _StatCard({required this.label, required this.value, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 160,
-      child: Card(
-        elevation: 0,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 6),
-              Text(value, style: Theme.of(context).textTheme.headlineSmall),
-            ],
-          ),
-        ),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.outlineVariant)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 12),
+          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant)),
+        ],
       ),
     );
   }
@@ -623,3 +678,5 @@ class _ModuleChaptersState {
   bool loading = false;
   bool loadedOnce = false;
 }
+
+

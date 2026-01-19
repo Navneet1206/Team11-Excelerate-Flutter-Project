@@ -95,14 +95,33 @@ class _MentorDashboardScreenState extends State<MentorDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.auth.user?.fullName ?? widget.auth.user?.email ?? 'Mentor';
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final name = widget.auth.user?.fullName ?? widget.auth.user?.email.split('@')[0] ?? 'Mentor';
 
     return Scaffold(
+      backgroundColor: scheme.surfaceContainerHigh,
       appBar: AppBar(
-        title: const Text('Mentor Dashboard'),
+        backgroundColor: scheme.surface,
+        title: Text(
+          'Mentor Hub',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
         actions: [
           _notificationsButton(),
-          IconButton(onPressed: widget.auth.logout, icon: const Icon(Icons.logout)),
+          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: scheme.primary.withValues(alpha: 0.1),
+              child: IconButton(
+                onPressed: widget.auth.logout,
+                icon: Icon(Icons.logout_rounded, size: 18, color: scheme.primary),
+                tooltip: 'Logout',
+              ),
+            ),
+          ),
         ],
       ),
       body: _loading
@@ -110,68 +129,196 @@ class _MentorDashboardScreenState extends State<MentorDashboardScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 children: [
-                  Text('Welcome, $name', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 12),
-                  Card(
-                    elevation: 0,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: ListTile(
-                      title: const Text('Pending reviews'),
-                      trailing: Text('${_data?['pendingReviews'] ?? 0}', style: Theme.of(context).textTheme.titleLarge),
-                      onTap: () async {
-                        await context.push('/mentor/submissions');
-                        if (!mounted) return;
-                        await _load();
-                      },
+                  // Personalized Greeting Section
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [scheme.secondary, scheme.secondary.withValues(alpha: 0.8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: scheme.secondary.withValues(alpha: 0.2),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        )
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        await context.push('/mentor/submissions');
-                        if (!mounted) return;
-                        await _load();
-                      },
-                      icon: const Icon(Icons.inbox_outlined),
-                      label: const Text('Review submissions'),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      onPressed: () => context.push('/mentor/programs'),
-                      icon: const Icon(Icons.view_list_outlined),
-                      label: const Text('View my programs'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Assigned learners', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 10),
-                  ...(((_data?['assignedLearners'] ?? []) as List)
-                      .cast<Map<String, dynamic>>()
-                      .map(
-                        (u) => Card(
-                          elevation: 0,
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: ListTile(
-                            title: Text(u['full_name']?.toString() ?? ''),
-                            subtitle: Text(u['email']?.toString() ?? ''),
-                            trailing: const Icon(Icons.timeline),
-                            onTap: () {
-                              final id = u['id'] as String?;
-                              if (id != null) context.push('/mentor/learners/$id/timeline');
-                            },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.auto_awesome_outlined, color: Colors.white70, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'MENTOR MODE',
+                              style: textTheme.labelMedium?.copyWith(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Ready to guide, $name?',
+                          style: textTheme.headlineSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
                           ),
                         ),
-                      )),
+                        const SizedBox(height: 8),
+                        Text(
+                          'You have ${_data?['pendingReviews'] ?? 0} submissions waiting for your feedback.',
+                          style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Quick Access Status
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MentorActionCard(
+                          label: 'Review Queue',
+                          value: '${_data?['pendingReviews'] ?? 0}',
+                          icon: Icons.reviews_outlined,
+                          color: Colors.orange,
+                          onTap: () async {
+                            await context.push('/mentor/submissions');
+                            if (!mounted) return;
+                            await _load();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _MentorActionCard(
+                          label: 'My Programs',
+                          value: '${(_data?['assignedLearners'] ?? []).length}',
+                          icon: Icons.topic_outlined,
+                          color: scheme.primary,
+                          onTap: () => context.push('/mentor/programs'),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  Text(
+                    'Assigned Learners',
+                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (((_data?['assignedLearners'] ?? []) as List).isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      decoration: BoxDecoration(
+                        color: scheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: scheme.outlineVariant),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.group_off_outlined, size: 48, color: scheme.outline),
+                          const SizedBox(height: 16),
+                          const Text('No learners assigned to you yet'),
+                        ],
+                      ),
+                    )
+                  else
+                    ...(((_data?['assignedLearners'] ?? []) as List)
+                        .cast<Map<String, dynamic>>()
+                        .map(
+                          (u) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Card(
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: scheme.primary.withValues(alpha: 0.1),
+                                  child: Text(
+                                    (u['full_name']?.toString() ?? 'U')[0].toUpperCase(),
+                                    style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                title: Text(u['full_name']?.toString() ?? 'Unnamed Learner'),
+                                subtitle: Text(u['email']?.toString() ?? ''),
+                                trailing: const Icon(Icons.timeline_rounded, size: 20),
+                                onTap: () {
+                                  final id = u['id'] as String?;
+                                  if (id != null) context.push('/mentor/learners/$id/timeline');
+                                },
+                              ),
+                            ),
+                          ),
+                        )),
                 ],
               ),
             ),
+    );
+  }
+}
+
+class _MentorActionCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _MentorActionCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 16),
+            Text(
+              value,
+              style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

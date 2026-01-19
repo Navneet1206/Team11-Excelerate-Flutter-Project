@@ -8,6 +8,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/shared/notifications_screen.dart';
 import '../screens/shared/program_reviews_screen.dart';
+import '../screens/shared/splash_screen.dart';
 import '../screens/learner/learner_dashboard_screen.dart';
 import '../screens/learner/learner_programs_screen.dart';
 import '../screens/learner/learner_program_detail_screen.dart';
@@ -33,8 +34,12 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     refreshListenable: auth,
-    initialLocation: '/login',
+    initialLocation: '/splash',
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => LoginScreen(auth: auth),
@@ -182,14 +187,19 @@ class AppRouter {
     ],
     redirect: (context, state) {
       final isInit = auth.status == AuthStatus.initializing;
-      if (isInit) return null;
+      final goingToSplash = state.matchedLocation == '/splash';
+
+      if (isInit) {
+        return goingToSplash ? null : '/splash';
+      }
 
       final isAuthed = auth.status == AuthStatus.authenticated;
       final goingToLogin = state.matchedLocation == '/login';
       final goingToSignup = state.matchedLocation == '/signup';
 
       if (!isAuthed) {
-        return (goingToLogin || goingToSignup) ? null : '/login';
+        if (goingToLogin || goingToSignup) return null;
+        return '/login';
       }
 
       final role = auth.user?.role;
@@ -200,7 +210,9 @@ class AppRouter {
         _ => '/login',
       };
 
-      if (goingToLogin) return home;
+      if (goingToSplash || goingToLogin) {
+        return home;
+      }
 
       // Prevent cross-role route access.
       if (role == 'learner' && state.matchedLocation.startsWith('/admin')) return home;

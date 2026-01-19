@@ -16,10 +16,17 @@ class AppConfig {
     const fromDefine = String.fromEnvironment('API_BASE_URL');
     if (fromDefine.trim().isNotEmpty) return fromDefine;
 
-    final fromEnvFile = dotenv.env['API_BASE_URL'];
-    if (fromEnvFile != null && fromEnvFile.trim().isNotEmpty) return fromEnvFile;
+    var url = dotenv.env['API_BASE_URL'] ?? '';
+    if (url.trim().isEmpty) {
+      url = kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+    }
 
-    return kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
-    // return kIsWeb ? 'https://team11-excelerate-flutter-project.vercel.app' : ' ';
+    // Fix for Web: Chrome doesn't understand 10.0.2.2 (android emulator loopback).
+    // If the URL is set to the emulator default but we are on Web, swap to localhost.
+    if (kIsWeb && url.contains('10.0.2.2')) {
+      url = url.replaceAll('10.0.2.2', 'localhost');
+    }
+
+    return url;
   }
 }

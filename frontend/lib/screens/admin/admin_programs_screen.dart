@@ -73,24 +73,34 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
+      backgroundColor: scheme.surfaceContainerHigh,
       appBar: AppBar(
-        title: const Text('Manage programs'),
+        title: Text(
+          'Curriculum Manager',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
         actions: [
-          IconButton(
-            onPressed: () async {
-              final created = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => _CreateProgramDialog(api: widget.api),
-              );
-              if (created == true) {
-                if (!context.mounted) return;
-                showAppSnack(context, 'Program created');
-                _load(reset: true);
-              }
-            },
-            icon: const Icon(Icons.add_circle_outline),
-            tooltip: 'Create program',
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton.filledTonal(
+              onPressed: () async {
+                final created = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => _CreateProgramDialog(api: widget.api),
+                );
+                if (created == true) {
+                  if (!context.mounted) return;
+                  showAppSnack(context, 'Program catalog updated');
+                  _load(reset: true);
+                }
+              },
+              icon: const Icon(Icons.library_add_rounded, size: 20),
+              tooltip: 'Provision New Program',
+            ),
           ),
         ],
       ),
@@ -98,33 +108,103 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: () => _load(reset: true),
-              child: ListView.separated(
-                padding: const EdgeInsets.all(12),
-                itemCount: _items.length + (_hasMore ? 1 : 0),
-                separatorBuilder: (context, index) => const SizedBox(height: 10),
-                itemBuilder: (ctx, i) {
-                  if (i == _items.length) {
-                    if (!_loadingMore) {
-                      _load(reset: false);
-                    }
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
+              child: _items.isEmpty
+                  ? _EmptyPrograms()
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: _items.length + (_hasMore ? 1 : 0),
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (ctx, i) {
+                        if (i == _items.length) {
+                          if (!_loadingMore) _load(reset: false);
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
 
-                  final p = _items[i];
-                  return ListTile(
-                    tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    title: Text(p['title']?.toString() ?? ''),
-                    subtitle: Text('Mentor: ${p['mentor_name'] ?? ''}'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => widget.openProgram(p['id'] as String),
-                  );
-                },
-              ),
+                        final p = _items[i];
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: scheme.surface,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: scheme.outlineVariant),
+                          ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () => widget.openProgram(p['id'] as String),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: scheme.primary.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(Icons.auto_stories_rounded, color: scheme.primary, size: 20),
+                                      ),
+                                      const Spacer(),
+                                      const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    p['title']?.toString() ?? 'Untitled Program',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.person_pin_rounded, size: 14, color: scheme.outline),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Mentored by ${p['mentor_name'] ?? 'Unassigned'}',
+                                          style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
+    );
+  }
+}
+
+class _EmptyPrograms extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.collections_bookmark_rounded, size: 64, color: scheme.outline),
+          const SizedBox(height: 16),
+          Text(
+            'Program Catalog Empty',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start by creating your first educational program.',
+            style: TextStyle(color: scheme.onSurfaceVariant),
+          ),
+        ],
+      ),
     );
   }
 }
