@@ -32,6 +32,25 @@ The application has undergone a comprehensive UI/UX overhaul, adopting the **"Di
 
 ---
 
+## 🖼️ Visual Showcase
+
+### Auth Experience
+<p align="center">
+  <img src="readme-assets/login_page.jpeg" width="45%" />
+  <img src="readme-assets/Learner_Signup_page.jpeg" width="45%" />
+</p>
+
+### Learner Journey
+<p align="center">
+  <img src="readme-assets/user_home_dashboard_page.jpeg" width="90%" />
+</p>
+<p align="center">
+  <img src="readme-assets/learner_Program_detail_learning_journey_page.jpeg" width="45%" />
+  <img src="readme-assets/learner_program_task_learning_journey_Course_material%20and%20Submissions_page.jpeg" width="45%" />
+</p>
+
+---
+
 ## 🛠️ Repository Structure
 
 - `backend/` — REST API (Node.js/Express + PostgreSQL)
