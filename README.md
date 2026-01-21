@@ -39,6 +39,26 @@ The application has undergone a comprehensive UI/UX overhaul, adopting the **"Di
 
 ## 📖 Documentation
 
+### 📚 API & Backend Documentation
+
+Complete documentation for the SkillTrack Pro API is available in the [docs/](docs/) folder:
+
+| Document | Purpose | Read Time |
+|----------|---------|-----------|
+| **[📍 Documentation Index](docs/DOCUMENTATION_INDEX.md)** | Central navigation hub for all docs | 5 min |
+| **[⚡ Quick Start](docs/QUICK_START.md)** | Get up and running in 5 minutes | 10 min |
+| **[🔌 API Documentation](docs/API_DOCUMENTATION.md)** | Complete reference for all 50+ endpoints | 40 min |
+| **[💻 cURL Guide](docs/CURL_GUIDE.md)** | Master command-line API testing with examples | 25 min |
+| **[🏗️ System Overview](docs/SYSTEM_OVERVIEW.md)** | Architecture, database schema, workflows | 15 min |
+| **[🧪 Visual Testing Guide](docs/API_TESTING_VISUAL_GUIDE.md)** | Interactive testing workflows & debugging | 15 min |
+
+**Quick Links:**
+- 🚀 [Start here: Quick Start Guide](docs/QUICK_START.md)
+- 📊 [View all endpoints: API Documentation](docs/API_DOCUMENTATION.md)
+- 🔍 [Browse by topic: Documentation Index](docs/DOCUMENTATION_INDEX.md)
+
+### Project Documentation
+
 - **User Experience**: [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
 - **Technical Architecture**: [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 
