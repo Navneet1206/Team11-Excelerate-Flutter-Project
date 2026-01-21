@@ -17,8 +17,13 @@ class AppConfig {
     if (fromDefine.trim().isNotEmpty) return fromDefine;
 
     var url = dotenv.env['API_BASE_URL'] ?? '';
+    
     if (url.trim().isEmpty) {
-      url = kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+      // Web: default to deployed backend
+      // Emulator/Device: use emulator IP or localhost
+      url = kIsWeb 
+        ? 'https://team11-excelerate-flutter-project.vercel.app'  // Web deployed backend
+        : 'http://10.0.2.2:3000'; // Android emulator
     }
 
     // Fix for Web: Chrome doesn't understand 10.0.2.2 (android emulator loopback).
