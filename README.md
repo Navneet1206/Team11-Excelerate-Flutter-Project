@@ -12,6 +12,29 @@ The application has undergone a comprehensive UI/UX overhaul, adopting the **"Di
 - **Modern Typography**: High-contrast pairings using **Outfit** for headers and **Inter** for readability.
 - **Dynamic Feedback**: Micro-animations, skeleton loaders, and custom glassmorphism alerts.
 
+---
+
+## 📸 App Screenshots
+
+### Authentication & Onboarding
+<div align="center">
+  <img src="readme-assets/login_page.jpeg" alt="Login Page" width="300" />
+  <img src="readme-assets/Learner_Signup_page.jpeg" alt="Signup Page" width="300" />
+</div>
+
+### Learner Dashboard
+<div align="center">
+  <img src="readme-assets/user_home_dashboard_page.jpeg" alt="Home Dashboard" width="300" />
+  <img src="readme-assets/learner_Program_detail_learning_journey_page.jpeg" alt="Learning Journey" width="300" />
+</div>
+
+### Task Management & Submissions
+<div align="center">
+  <img src="readme-assets/learner_program_task_learning_journey_Course_material and Submissions_page.jpeg" alt="Task & Submissions" width="300" />
+</div>
+
+---
+
 ## 🚀 Core Features
 
 ### For Learners
